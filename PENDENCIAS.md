@@ -52,7 +52,7 @@ Legenda de prioridade: 🔴 alta (afeta resultado ou risco de perda) · 🟡 mé
 
 | # | Prioridade | Pendência | Responsável |
 |---|---|---|---|
-| 5.1 | 🔴 | **Primeiro commit no Git.** Nada está versionado ainda; é o maior risco de perda. `.env`, `painel/node_modules` e `painel/dist` já estão fora pelos `.gitignore` | Lucas |
+| 5.1 | ✅ | ~~Primeiro commit no Git~~: **feito em 18/11/2026** e enviado para https://github.com/LucasLellisBarros0/engenharia-de-dados-TCC (repositório público; `.env`, dados e `node_modules` ficam fora) | Lucas |
 | 5.2 | 🟡 | **Demonstrar ao vivo o cenário de falha** (Quadro 8, etapa 5): validação reprovada e painel mantendo a edição anterior. Hoje está coberto só por testes automatizados | Lucas |
 | 5.3 | 🟡 | Implementar o ajuste que o grupo decidir nos itens 1.1 e 1.3 (regras em `config/regras.yaml`, cálculo em `metricas.py` e `hipoteses.py`) e reprocessar (`reprocessar`, sem nova coleta) | Lucas |
 | 5.4 | 🟢 | Opcional: comando que gera um arquivo `.duckdb` com views sobre a edição ativa, para consulta no DBeaver ou no DuckDB UI (os Parquet continuam sendo a fonte oficial) | Lucas |

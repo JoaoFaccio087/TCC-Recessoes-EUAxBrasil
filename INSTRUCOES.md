@@ -23,6 +23,18 @@ C:\Users\SEU_USUARIO\tcc-local\dados\publicacao\
 - Uma edição **nunca muda** depois de publicada. Para reproduzir uma análise, use sempre a mesma pasta e cite o `id_edicao`.
 - **Não use** `bronze\` (respostas brutas das fontes) nem `silver\` (observações antes dos tratamentos) para a análise final.
 
+### 1.1 Sem rodar a pipeline: baixar os dados do GitHub
+
+Quem não roda a pipeline obtém os mesmos dados no branch **`dados`** do repositório, que tem o código e a pasta `dados/` (Bronze, Silver, edições publicadas, registros de execução e relatórios de conferência):
+
+```powershell
+git clone -b dados https://github.com/LucasLellisBarros0/engenharia-de-dados-TCC.git tcc-dados
+# edição ativa: tcc-dados\dados\publicacao\atual.json
+# arquivos:     tcc-dados\dados\publicacao\edicoes\<id_edicao>\*.parquet
+```
+
+Nos exemplos deste guia, troque a pasta `...\tcc-local\dados` por `...\tcc-dados\dados`. Para atualizar depois: `git -C tcc-dados pull`. O branch é atualizado por quem mantém a pipeline, com `.\scripts\publicar_dados.ps1`.
+
 ## 2. Como abrir os dados
 
 ### 2.1 Python do projeto (recomendado)

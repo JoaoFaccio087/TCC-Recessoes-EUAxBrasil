@@ -1,4 +1,4 @@
-# Cadastra (ou atualiza) a execução semanal da pipeline no Agendador de Tarefas do Windows
+﻿# Cadastra (ou atualiza) a execução semanal da pipeline no Agendador de Tarefas do Windows
 # (D6; texto 4.3, 5.2 e 6.3; Quadro 4).
 #
 # Uso:  .\scripts\agendar_tarefa.ps1 [-Dia Monday] [-Hora 08:00] [-Remover]

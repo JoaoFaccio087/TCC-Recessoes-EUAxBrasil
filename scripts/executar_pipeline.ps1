@@ -1,4 +1,4 @@
-# Disparo da pipeline pelo Agendador de Tarefas do Windows ou manualmente (D6).
+﻿# Disparo da pipeline pelo Agendador de Tarefas do Windows ou manualmente (D6).
 # Uso: .\scripts\executar_pipeline.ps1 [comando] [argumentos extras]   (padrão: atualizar)
 # No Agendador: execução semanal, "não iniciar nova instância" se outra estiver em execução.
 # O ambiente virtual vem de TCC_VENV no .env (fora do OneDrive); sem ele, usa .\.venv.

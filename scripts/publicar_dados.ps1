@@ -1,4 +1,4 @@
-# Publica os dados da pipeline no branch "dados" do GitHub.
+﻿# Publica os dados da pipeline no branch "dados" do GitHub.
 #
 # Uso:  .\scripts\publicar_dados.ps1 [-Worktree <pasta>] [-SemEnviar]
 #

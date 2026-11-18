@@ -81,6 +81,17 @@ Na primeira instalação em outra máquina, crie a junção antes do `npm instal
 
 Abas: EUA × Brasil (RF07, RF08, RF11, RF12, RF15), Comparar episódios (RF09), Quadro-resumo (RF10), Hipóteses (7.5), Manutenção (RF13) e Glossário (RNF08). O rodapé mostra o tempo de carga e o da última consulta (RNF05).
 
+## Dados no GitHub (branch `dados`)
+
+Os dados não vão para o `main`. O branch `dados` tem o código e a pasta `dados/`, uma cópia de `TCC_DADOS` sem a trava e sem a edição sintética. Para atualizá-lo depois de uma edição nova:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publicar_dados.ps1          # mescla o main, copia os dados, faz commit e envia
+powershell -ExecutionPolicy Bypass -File .\scripts\publicar_dados.ps1 -SemEnviar
+```
+
+O script usa um worktree em `%USERPROFILE%\tcc-local\repo-dados` (fora do OneDrive) e não roda enquanto a pipeline estiver com a trava. Como obter os dados sem rodar a pipeline: [`INSTRUCOES.md`](INSTRUCOES.md), seção 1.1.
+
 ## Avaliação (SUS e conferência dos dados)
 
 O roteiro, as tarefas, o questionário e o modelo de respostas ficam em [`avaliacao/`](avaliacao/sus_roteiro.md).

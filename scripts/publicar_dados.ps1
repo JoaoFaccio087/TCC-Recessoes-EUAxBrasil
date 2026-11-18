@@ -30,9 +30,10 @@ if (Test-Path (Join-Path $dados '.lock')) {
     Write-Error "A pipeline está rodando (trava em $dados\.lock). Tente de novo quando terminar."
 }
 
-function Invoke-Git { param([Parameter(ValueFromRemainingArguments = $true)] $Argumentos)
-    & git @Argumentos
-    if ($LASTEXITCODE -ne 0) { throw "git $($Argumentos -join ' ') falhou (código $LASTEXITCODE)" }
+# Sem bloco param: $args repassa tudo ao git (inclusive -C, -A, -f) sem o PowerShell interpretar.
+function Invoke-Git {
+    & git @args
+    if ($LASTEXITCODE -ne 0) { throw "git $($args -join ' ') falhou (código $LASTEXITCODE)" }
 }
 
 # 1. Worktree do branch "dados" (criado na primeira vez)

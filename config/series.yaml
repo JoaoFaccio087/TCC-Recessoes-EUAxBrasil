@@ -341,7 +341,8 @@ series:
     pais: BR
     grupo: acoes
     fonte: Ipeadata
-    produtor: B3
+    # O índice é da B3; o Ipeadata cita a Anbima como fonte da série (D37).
+    produtor: "B3 (via Ipeadata, que cita a Anbima como fonte)"
     codigo_origem: GM12_IBVSP12
     frequencia: M
     tipo_medida: nivel

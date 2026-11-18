@@ -72,6 +72,7 @@ O pico é `t_rel = 0`. A recessão de 1980 aparece apenas como antecedente dentr
 | D34 | 17/11 | **Painel de referência** em `painel/` (Vue 3, TypeScript, DuckDB-Wasm 1.32.0), sem biblioteca de gráficos: SVG próprio. Abas: EUA × Brasil, Comparar episódios, Quadro-resumo, Hipóteses, Manutenção e Glossário. Cores validadas para daltonismo (azul = EUA, laranja = Brasil; slots 1 a 3 aprovados em todos os pares, claro e escuro), status sempre com ícone e texto, tabela como alternativa a cada gráfico (RNF09). Em desenvolvimento, o Vite serve `<TCC_DADOS>/publicacao` em `/dados/` com as regras de cache da seção 6.3. |
 | D35 | 17/11 | **Agendamento cadastrado:** tarefa "TCC - atualizar dados (recessoes EUA x Brasil)", toda segunda às 08:00, `IgnoreNew` (não inicia nova instância), `StartWhenAvailable` (roda ao ligar se o computador estava desligado; risco do Quadro 4), limite de 30 min (RNF11), só com sessão aberta (sem senha guardada). Script: `scripts/agendar_tarefa.ps1`. Teste em 17/11: código 0, `SEM_ALTERACOES`. |
 | D36 | 17/11 | **Avaliação (etapa 7):** comando `conferir` (RNF03) compara pico, pior valor e fim da janela de cada série e episódio com uma consulta nova à fonte e gera relatório com pontos para conferência manual; primeira execução: 117 de 117 pontos conferem. Comando `sus` pontua o questionário (RNF06) e indica o adjetivo de Bangor, Kortum e Miller (2009); roteiro, tarefas e questionário em `avaliacao/`. |
+| D37 | 18/11 | **Produtor do Ibovespa:** `dim_serie.produtor` de `br_acoes` passa a ser "B3 (via Ipeadata, que cita a Anbima como fonte)". O índice é da B3, mas o Ipeadata (`GM12_IBVSP12`) atribui a série à Anbima. A conferência de 17/11 mostrou que os valores batem. O campo `fonte` continua `Ipeadata` porque é ele que escolhe o conector. O contrato não muda. |
 
 ### Impacto das decisões D13 a D27 (regra da seção 12)
 
@@ -99,6 +100,7 @@ O pico é `t_rel = 0`. A recessão de 1980 aparece apenas como antecedente dentr
 | D34 Painel | não muda | `painel/` | conferir 4.7 e 5.4 (sem mudança esperada) |
 | D35 Agendamento | `scripts/agendar_tarefa.ps1` | aba Manutenção | não muda (4.3, 5.2, 6.3 já prometem) |
 | D36 Avaliação | `conferencia.py`, `sus.py`, `avaliacao/` | não muda | não muda (7.6 já promete) |
+| D37 Produtor do Ibovespa | `series.yaml` | ficha da série mostra "B3 (via Ipeadata, que cita a Anbima como fonte)" | citar B3 e Ipeadata/Anbima no Quadro 6 |
 
 ### 2.1 Simplificações desta revisão [DECIDIDO, frente de engenharia]
 

@@ -101,6 +101,9 @@ def reconstruir(cfg: Config, pasta_dados: Path) -> tuple[pd.DataFrame, pd.DataFr
             if a["status"] != bronze.OK or id_s not in cfg.series:
                 continue
             serie = cfg.series[id_s]
+            # Coleta de um código que a série não usa mais (ex.: br_juros antes da D40): obsoleta.
+            if a.get("codigo_origem") != serie.get("codigo_origem"):
+                continue
             caminho = pasta_dados / a["caminho"]
             if not caminho.exists():
                 raise ErroBronze(f"arquivo do Bronze ausente: {caminho}")

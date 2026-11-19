@@ -1,0 +1,403 @@
+# Mapa das séries (engenharia_de_dados.md, seção 4.1).
+# `conferir` lista o que depende de consulta à fonte. Ao conferir, registrar
+# o resultado e a data em `conferido_em` e remover o item de `conferir`.
+#
+# Campos:
+#   pais: BR | EUA
+#   grupo: chave de regras.yaml (limiar, N, sentido adverso)
+#   fonte: FRED | Ipeadata | IBGE/SIDRA | Comex Stat
+#   frequencia: M | T | A
+#   tipo_medida: nivel | taxa
+#   episodios: episódios em que a série é usada
+#   apenas_ficha: true = só aparece na ficha, fora das métricas (D12)
+#   faixa: [mín, máx] plausível; fora dela a observação vai para observacao_rejeitada (D15).
+#          Sem faixa: nível precisa ser > 0; taxa não tem limite.
+#   sidra: parâmetros da API SIDRA (tabela, nivel, variavel, classificacoes)
+#   unidade_fonte: unidade esperada na resposta da fonte (checada na Silver, se informada)
+#   comexstat: parâmetros da API do Comex Stat (pais, fluxo)
+#   auxiliar: true = só serve de insumo a tratamentos (deflator); fora das métricas e da dim_serie
+#   tratamentos: passos 1 a 3 do texto 7.3 (tratamentos.py): encadear_variacao,
+#                {deflacionar: <id_serie auxiliar>}, var_12m, anualizar_dias_uteis, stl
+
+series:
+  eua_prod_ind:
+    nome: Produção industrial (EUA)
+    pais: EUA
+    grupo: producao_industrial
+    fonte: FRED
+    produtor: Federal Reserve Board
+    codigo_origem: INDPRO
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice 2017=100"
+    ajuste_sazonal: true
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/INDPRO
+    faixa: [10, 300]
+
+  br_prod_ind_antiga:
+    nome: Produção industrial geral (Brasil, série antiga)
+    pais: BR
+    grupo: producao_industrial
+    fonte: Ipeadata
+    produtor: IBGE
+    codigo_origem: PIMPFN12_QIIG12
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice (média 2002 = 100)"
+    ajuste_sazonal: false
+    episodios: ["1981-1982"]
+    url: http://www.ipeadata.gov.br/
+    tratamentos: [stl]
+    conferido_em: >-
+      2026-11-17: "Produção industrial - indústria geral - quantum - índice (média 2002 = 100) -
+      INATIVA", 1975-01 a 2014-02, sem lacunas; série antiga unida à nova em jan/1991 pelo Ipea.
+      A versão dessazonalizada (PIMPFN12_QIIGSAS12) só começa em 1991-01, então recebe STL.
+
+  br_prod_ind:
+    nome: Produção industrial geral (Brasil, PIM-PF)
+    pais: BR
+    grupo: producao_industrial
+    fonte: IBGE/SIDRA
+    produtor: IBGE
+    codigo_origem: "8888/v12607/c544[129314]"
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice 2022=100"
+    ajuste_sazonal: true
+    episodios: ["2007-2009", "2020"]
+    url: https://sidra.ibge.gov.br/tabela/8888
+    sidra: {tabela: 8888, nivel: n1, variavel: 12607, classificacoes: {"544": "129314"}}
+    unidade_fonte: Número-índice
+    faixa: [10, 300]
+    conferido_em: >-
+      2026-11-17: variável 12607 = "PIMPF - Número-índice com ajuste sazonal (2022=100)";
+      categoria 129314 = "1 Indústria geral"; disponível de 2002-01 a 2026-09.
+
+  eua_desemprego:
+    nome: Taxa de desemprego (EUA)
+    pais: EUA
+    grupo: desemprego
+    fonte: FRED
+    produtor: U.S. Bureau of Labor Statistics
+    codigo_origem: UNRATE
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "%"
+    ajuste_sazonal: true
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/UNRATE
+
+  br_desemprego_pme_antiga:
+    nome: Taxa de desemprego (Brasil, PME antiga)
+    pais: BR
+    grupo: desemprego
+    fonte: Ipeadata
+    produtor: IBGE
+    codigo_origem: PME12_TDA12
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "%"
+    ajuste_sazonal: false
+    episodios: ["1981-1982"]
+    url: http://www.ipeadata.gov.br/
+    faixa: [0, 50]
+    tratamentos: [stl]
+    aviso_metodologia: >-
+      PME antiga (desemprego aberto, referência 30 dias, regiões metropolitanas). Começa em
+      1980-01: os meses de 1979-07 a 1979-12 da janela de exibição ficam sem dados.
+      O Ipeadata documenta a origem da série apenas para 1982-1989; os valores de 1980-1981 não
+      têm origem documentada e foram mantidos por coerência com a sequência, sem quebra entre
+      1981 e 1982.
+    conferido_em: >-
+      2026-11-17: "Taxa de desemprego - aberto - referência: 30 dias - RMs - INATIVA",
+      IBGE/PME antiga, 1980-01 a 2002-12, sem lacunas de 1980 a 1987.
+
+  br_desemprego_pme_nova:
+    nome: Taxa de desemprego (Brasil, PME nova)
+    pais: BR
+    grupo: desemprego
+    fonte: Ipeadata
+    produtor: IBGE
+    codigo_origem: PAN12_TD12
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "%"
+    ajuste_sazonal: false
+    episodios: ["2007-2009"]
+    url: http://www.ipeadata.gov.br/
+    faixa: [0, 50]
+    tratamentos: [stl]
+    conferido_em: >-
+      2026-11-17: "Taxa de desemprego - INATIVA", IBGE/PME, 2002-03 a 2015-12, sem lacunas
+      na janela de 2004-12 a 2013-12.
+
+  br_desemprego_pnadc:
+    nome: Taxa de desocupação (Brasil, PNAD Contínua, trimestre móvel)
+    pais: BR
+    grupo: desemprego
+    fonte: IBGE/SIDRA
+    produtor: IBGE
+    codigo_origem: "6381"
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "%"
+    ajuste_sazonal: false
+    episodios: ["2020"]
+    url: https://sidra.ibge.gov.br/tabela/6381
+    sidra: {tabela: 6381, nivel: n1, variavel: 4099}
+    unidade_fonte: "%"
+    faixa: [0, 50]
+    tratamentos: [stl]
+    aviso_metodologia: "Trimestre móvel; data_ref = último mês do trimestre móvel."
+    conferido_em: >-
+      2026-11-17: tabela 6381, variável 4099 = "Taxa de desocupação, na semana de referência, das
+      pessoas de 14 anos ou mais de idade" (%), trimestre móvel, 2012-03 a 2026-09.
+
+  eua_juros:
+    nome: Taxa dos fundos federais (EUA)
+    pais: EUA
+    grupo: juros
+    fonte: FRED
+    produtor: Federal Reserve Board
+    codigo_origem: FEDFUNDS
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "% a.a."
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/FEDFUNDS
+
+  br_juros:
+    nome: Taxa Over/Selic (Brasil)
+    pais: BR
+    grupo: juros
+    fonte: Ipeadata
+    produtor: Banco Central do Brasil
+    codigo_origem: BM12_TJOVER12
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "% a.a. (acumulada no mês, anualizada por dias úteis, base 252)"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: http://www.ipeadata.gov.br/
+    faixa: [0, 100]   # valor bruto: % acumulada no mês
+    # D40: a fonte é a taxa acumulada no mês; a anualização é feita pela pipeline.
+    tratamentos: [anualizar_dias_uteis]
+    aviso_metodologia: >-
+      Em 1981-1982 a taxa nominal acompanha a inflação da época; fora de H1 (D25).
+      Não há série oficial do Banco Central para conferir os valores anteriores a ago/1986.
+      Taxa acumulada no mês anualizada pelos dias úteis (feriados nacionais), base 252 (D40);
+      em 1981-1982 a base de 252 dias úteis é hipótese do trabalho.
+    conferido_em: >-
+      2026-11-18: BM12_TJOVER12, "Taxa de juros - Over / Selic - acumulada no mês", (% a.m.),
+      1974-01 em diante; PAN12_TJOVER12 (usada até a D40) é exatamente (1 + m)^12 - 1 desta
+      série. De 1986-07 em diante a taxa mensal bate com a capitalização das taxas diárias
+      na base de 252 dias úteis.
+
+  eua_inflacao:
+    nome: Inflação ao consumidor em 12 meses (EUA, CPI)
+    pais: EUA
+    grupo: inflacao
+    fonte: FRED
+    produtor: U.S. Bureau of Labor Statistics
+    codigo_origem: CPIAUCSL
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "% em 12 meses"
+    ajuste_sazonal: true
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/CPIAUCSL
+    faixa: [10, 1000]   # valor bruto: número-índice do CPI
+    tratamentos: [var_12m]
+
+  br_inflacao:
+    nome: Inflação ao consumidor em 12 meses (Brasil, IPCA)
+    pais: BR
+    grupo: inflacao
+    fonte: IBGE/SIDRA
+    produtor: IBGE
+    codigo_origem: "1737"
+    frequencia: M
+    tipo_medida: taxa
+    unidade: "% em 12 meses"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://sidra.ibge.gov.br/tabela/1737
+    sidra: {tabela: 1737, nivel: n1, variavel: 2265}
+    unidade_fonte: "%"
+    conferido_em: >-
+      2026-11-17: tabela 1737, variável 2265 = "IPCA - Variação acumulada em 12 meses" (%);
+      tabela desde 1979-12.
+
+  br_cambio_real:
+    nome: Taxa de câmbio efetiva real (Brasil)
+    pais: BR
+    grupo: cambio_real
+    fonte: FRED
+    produtor: OECD
+    codigo_origem: CCRETT01BRM661N
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice 2015=100"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/CCRETT01BRM661N
+    conferido_em: "2026-11-17: sem lacunas de 1980 a 2021"
+
+  br_export_total:
+    nome: Exportações totais reais (Brasil)
+    pais: BR
+    grupo: exportacoes
+    fonte: Ipeadata
+    produtor: SECEX/MDIC
+    codigo_origem: SECEX12_XVTOT12
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "US$ milhões FOB deflacionados pelo CPI dos EUA"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: http://www.ipeadata.gov.br/
+    tratamentos: [{deflacionar: eua_cpi}, stl]
+    conferido_em: >-
+      2026-11-17: unidade "US$", multiplicador "milhões"; 1977-01 a 2026-10, sem lacunas nas
+      três janelas.
+
+  br_export_eua:
+    nome: Exportações reais do Brasil para os EUA
+    pais: BR
+    grupo: exportacoes
+    fonte: Comex Stat
+    produtor: SECEX/MDIC
+    codigo_origem: "exportação, país 249 (Estados Unidos)"
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "US$ FOB deflacionados pelo CPI dos EUA"
+    ajuste_sazonal: false
+    episodios: ["2007-2009", "2020"]
+    url: https://comexstat.mdic.gov.br/
+    comexstat: {pais: 249, fluxo: export}
+    tratamentos: [{deflacionar: eua_cpi}, stl]
+    aviso_metodologia: "Disponível desde 1997; 1981-1982 = SEM_DADOS."
+    conferido_em: >-
+      2026-11-17: POST /general, país 249 = Estados Unidos; valores em US$ (unidades);
+      1997-01 a 2026-10 sem lacunas.
+
+  eua_pib:
+    nome: PIB real (EUA)
+    pais: EUA
+    grupo: pib
+    fonte: FRED
+    produtor: U.S. Bureau of Economic Analysis
+    codigo_origem: GDPC1
+    frequencia: T
+    tipo_medida: nivel
+    unidade: "bilhões de US$ encadeados de 2017"
+    ajuste_sazonal: true
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/GDPC1
+
+  br_pib_trim:
+    nome: PIB trimestral (Brasil, índice de volume dessazonalizado)
+    pais: BR
+    grupo: pib
+    fonte: IBGE/SIDRA
+    produtor: IBGE
+    codigo_origem: "1621"
+    frequencia: T
+    tipo_medida: nivel
+    unidade: "índice 1995=100"
+    ajuste_sazonal: true
+    episodios: ["2007-2009", "2020"]
+    url: https://sidra.ibge.gov.br/tabela/1621
+    sidra: {tabela: 1621, nivel: n1, variavel: 584, classificacoes: {"11255": "90707"}}
+    unidade_fonte: Número-índice
+    conferido_em: >-
+      2026-11-17: tabela 1621, variável 584 (índice de volume com ajuste sazonal, média
+      1995 = 100), categoria 90707 = "PIB a preços de mercado"; 1996T1 a 2026T2.
+
+  br_pib_anual:
+    nome: PIB, variação anual (Brasil)
+    pais: BR
+    grupo: pib
+    fonte: Ipeadata
+    produtor: IBGE
+    codigo_origem: SCN10_PIBG10
+    frequencia: A
+    tipo_medida: taxa
+    unidade: "% a.a."
+    ajuste_sazonal: false
+    episodios: ["1981-1982"]
+    url: http://www.ipeadata.gov.br/
+    apenas_ficha: true
+    aviso_metodologia: "Só na ficha do episódio, fora das métricas (D12)."
+
+  eua_acoes:
+    nome: Ações, índice real (EUA)
+    pais: EUA
+    grupo: acoes
+    fonte: FRED
+    produtor: OECD
+    codigo_origem: SPASTT01USM661N
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice deflacionado pelo CPI"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/SPASTT01USM661N
+    tratamentos: [{deflacionar: eua_cpi}]
+    conferido_em: "2026-11-17: índice 2015=100, nominal, sem ajuste sazonal, 1957-01 a 2026-10."
+
+  br_acoes:
+    nome: Ibovespa real (Brasil)
+    pais: BR
+    grupo: acoes
+    fonte: Ipeadata
+    # O índice é da B3; o Ipeadata cita a Anbima como fonte da série (D37).
+    produtor: "B3 (via Ipeadata, que cita a Anbima como fonte)"
+    codigo_origem: GM12_IBVSP12
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "número-índice real (dez/1993 = 100), encadeado e deflacionado pelo IPCA"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: http://www.ipeadata.gov.br/
+    faixa: [-90, 300]   # valor bruto: variação % mensal nominal
+    # Base dez/1993 = 100, a mesma do IPCA (var. 2266): o índice real fica a preços de dez/1993.
+    tratamentos: [{encadear_variacao: "1993-12"}, {deflacionar: br_ipca_indice}]
+    aviso_metodologia: >-
+      O IPCA começa em 1979-12: os meses anteriores da janela de 1981-1982 ficam sem dados.
+    conferido_em: >-
+      2026-11-17: "Índice de ações - Ibovespa - fech: acumulada no mês" (% a.m.), Anbima,
+      1968-02 a 2026-11, sem lacunas.
+
+  # ------------------------------------------------------------ séries auxiliares (deflatores)
+  eua_cpi:
+    nome: CPI-U, número-índice (EUA)
+    pais: EUA
+    fonte: FRED
+    produtor: U.S. Bureau of Labor Statistics
+    codigo_origem: CPIAUCSL
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice 1982-1984=100"
+    ajuste_sazonal: true
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://fred.stlouisfed.org/series/CPIAUCSL
+    auxiliar: true
+
+  br_ipca_indice:
+    nome: IPCA, número-índice (Brasil)
+    pais: BR
+    fonte: IBGE/SIDRA
+    produtor: IBGE
+    codigo_origem: "1737/v2266"
+    frequencia: M
+    tipo_medida: nivel
+    unidade: "índice dez/1993=100"
+    ajuste_sazonal: false
+    episodios: ["1981-1982", "2007-2009", "2020"]
+    url: https://sidra.ibge.gov.br/tabela/1737
+    sidra: {tabela: 1737, nivel: n1, variavel: 2266}
+    unidade_fonte: Número-índice
+    auxiliar: true

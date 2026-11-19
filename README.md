@@ -102,7 +102,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publicar_tudo.ps1
 
 1. branch `dados` (`publicar_dados.ps1`);
 2. dashboard (`deshboard\alimentar_dashboard.py`), que lê os dados do branch `dados` (worktree `TCC_REPO_DADOS`, padrão `%USERPROFILE%\tcc-local\repo-dados`); se mudou, commit e push do `main` e novo `publicar_dados.ps1`;
-3. branch `pipeline` do repositório do João (`pipeline/` = código do `main` + `dados/` do branch `dados`).
+3. branch `pipeline` do repositório oficial (JoaoFaccio087/TCC-Recessoes-EUAxBrasil): o `main` entra em `pipeline/` por `git subtree`, com histórico, e `pipeline/dados/` recebe a cópia do branch `dados` (D41);
+4. protótipo do painel (branch `painel` do repositório oficial): `dados.py` e `montar.py` regeram `painel/prototipo/index.html` com a edição ativa. As dependências npm ficam em `TCC_PROTOTIPO_NODE` (padrão `%USERPROFILE%\tcc-local\prototipo-node`, fora do OneDrive) e são instaladas na primeira vez.
 
 No fim, o script mostra o `id_edicao` de cada destino. Ele faz push do `main` logo no início e **não** é chamado pelo `atualizar` nem pelo Agendador: rode à mão.
 

@@ -108,3 +108,43 @@ def test_encadear_com_mes_base():
 def test_ibovespa_com_base_do_ipca(cfg):
     assert tr.passos(cfg, "br_acoes")[0] == {"encadear_variacao": "1993-12"}
     assert "(1993-12 = 100)" in tr.metodo(cfg, "br_acoes")["descricao"]
+
+
+# ------------------------------------------------------------------ D40: juros por dias úteis
+
+def test_pascoa():
+    import datetime as dt
+    assert tr.pascoa(1981) == dt.date(1981, 4, 19)
+    assert tr.pascoa(2008) == dt.date(2008, 3, 23)
+    assert tr.pascoa(2020) == dt.date(2020, 4, 12)
+
+
+def test_dias_uteis_de_meses_conferidos_a_mao():
+    # fev/2020: 20 dias de semana (o dia 1 é sábado; ano bissexto) menos Carnaval (24 e 25) = 18.
+    assert tr.dias_uteis(2020, 2) == 18
+    # dez/2008: 23 dias de semana (o dia 1 é segunda) menos o Natal (quinta) = 22.
+    assert tr.dias_uteis(2008, 12) == 22
+    # nov/2024: 21 dias de semana menos 15/11 (sexta) e 20/11 (quarta, feriado desde 2024) = 19.
+    assert tr.dias_uteis(2024, 11) == 19
+    # nov/2023: 22 dias de semana menos 2/11 (quinta) e 15/11 (quarta); 20/11 ainda não era feriado.
+    assert tr.dias_uteis(2023, 11) == 20
+
+
+def test_taxa_diaria_constante_gera_taxa_anual_constante():
+    # Taxa de 11,25% a.a. aplicada por dia útil: a taxa do mês muda com o número de dias úteis,
+    # mas a anualização por dias úteis devolve sempre 11,25% (sem o ruído de 1 a 1,7 p.p. do ^12).
+    meses = pd.date_range("2007-06-01", "2009-12-01", freq="MS")
+    diaria = 1.1125 ** (1 / 252)
+    mensal_pct = pd.Series([(diaria ** tr.dias_uteis(t.year, t.month) - 1) * 100 for t in meses],
+                           index=meses)
+    anual = tr.anualizar_dias_uteis(mensal_pct)
+    assert anual.max() - anual.min() < 1e-9
+    assert anual.iloc[0] == pytest.approx(11.25)
+    antigo = ((1 + mensal_pct / 100) ** 12 - 1) * 100
+    assert antigo.max() - antigo.min() > 1.0  # o método antigo oscilava mais de 1 p.p.
+
+
+def test_juros_declaram_anualizacao_e_metodo(cfg):
+    m = tr.metodo(cfg, "br_juros")
+    assert m["id_metodo"] == "anual_du252+pp_pico"
+    assert "252 dias úteis" in m["descricao"]

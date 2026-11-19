@@ -10,6 +10,7 @@ Passos disponíveis:
     {encadear_variacao: AAAA-MM}   idem, com 100 no mês-base indicado
     {deflacionar: <id_serie>}  (1) divide pelo índice de preços de uma série auxiliar
     var_12m                    (2) número-índice de preços -> variação % acumulada em 12 meses
+    anualizar_dias_uteis       (2) taxa % acumulada no mês -> % a.a., base de 252 dias úteis (D40)
     stl                        (3) ajuste sazonal STL (Cleveland et al., 1990); log para nível
 
 Uma série cujo grupo exige um tratamento que ela não declara falha com ``ErroTratamento``,
@@ -17,6 +18,8 @@ em vez de entrar na edição sem o tratamento devido.
 """
 
 from __future__ import annotations
+
+import datetime as dt
 
 import numpy as np
 import pandas as pd
@@ -34,7 +37,8 @@ GRUPOS_DEFLACIONADOS = {"acoes", "exportacoes"}
 GRUPOS_COM_STL = {"producao_industrial", "desemprego", "exportacoes"}
 
 # etapa do texto 7.3 (a ordem dentro da etapa 1 importa: encadear antes de deflacionar)
-ETAPA = {"encadear_variacao": (1, 0), "deflacionar": (1, 1), "var_12m": (2, 0), "stl": (3, 0)}
+ETAPA = {"encadear_variacao": (1, 0), "deflacionar": (1, 1), "var_12m": (2, 0),
+         "anualizar_dias_uteis": (2, 1), "stl": (3, 0)}
 STL_PARAMS = {"robust": True}
 PERIODO = {"M": 12, "T": 4}
 FREQ_PANDAS = {"M": "MS", "T": "QS"}
@@ -110,6 +114,61 @@ def var_12m(indice: pd.Series, freq: str = "M") -> pd.Series:
     return ((s / s.shift(12) - 1) * 100).dropna()
 
 
+# ------------------------------------------------------------------ dias úteis (D40)
+
+FERIADOS_FIXOS = [(1, 1), (4, 21), (5, 1), (9, 7), (10, 12), (11, 2), (11, 15), (12, 25)]
+CONSCIENCIA_NEGRA_DESDE = 2024  # 20/11, feriado nacional pela Lei 14.759/2023
+BASE_DIAS_UTEIS = 252
+
+
+def pascoa(ano: int) -> dt.date:
+    """Domingo de Páscoa (calendário gregoriano; algoritmo de Meeus/Jones/Butcher)."""
+    a, b, c = ano % 19, ano // 100, ano % 100
+    d, e = b // 4, b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    mes = (h + l - 7 * m + 114) // 31
+    dia = (h + l - 7 * m + 114) % 31 + 1
+    return dt.date(ano, mes, dia)
+
+
+def feriados_nacionais(ano: int) -> set[dt.date]:
+    """Fixos (1/1, 21/4, 1/5, 7/9, 12/10, 2/11, 15/11, 25/12 e 20/11 a partir de 2024) e móveis
+    pela Páscoa: segunda e terça de Carnaval, Sexta-feira Santa e Corpus Christi."""
+    p = pascoa(ano)
+    fixos = {dt.date(ano, m, d) for m, d in FERIADOS_FIXOS}
+    if ano >= CONSCIENCIA_NEGRA_DESDE:
+        fixos.add(dt.date(ano, 11, 20))
+    moveis = {p - dt.timedelta(days=48), p - dt.timedelta(days=47),  # Carnaval (seg e ter)
+              p - dt.timedelta(days=2), p + dt.timedelta(days=60)}   # Sexta Santa, Corpus Christi
+    return fixos | moveis
+
+
+def dias_uteis(ano: int, mes: int) -> int:
+    """Dias de segunda a sexta do mês, menos os feriados nacionais que caem em dia de semana."""
+    feriados = feriados_nacionais(ano)
+    d = dt.date(ano, mes, 1)
+    n = 0
+    while d.month == mes:
+        if d.weekday() < 5 and d not in feriados:
+            n += 1
+        d += dt.timedelta(days=1)
+    return n
+
+
+def anualizar_dias_uteis(taxa_mes_pct: pd.Series, freq: str = "M") -> pd.Series:
+    """Taxa % acumulada no mês -> % a.a. na base de 252 dias úteis: (1 + m)^(252/du) - 1."""
+    if freq != "M":
+        raise ErroTratamento("anualizar_dias_uteis só se aplica a séries mensais")
+    s = taxa_mes_pct.astype("float64").dropna()
+    du = pd.Series([dias_uteis(t.year, t.month) for t in s.index], index=s.index, dtype="float64")
+    return ((1 + s / 100) ** (BASE_DIAS_UTEIS / du) - 1) * 100
+
+
 def ajuste_stl(serie: pd.Series, freq: str, tipo_medida: str) -> pd.Series:
     """Série dessazonalizada por STL em cada trecho contínuo com pelo menos 2 ciclos completos.
 
@@ -135,6 +194,8 @@ def ajuste_stl(serie: pd.Series, freq: str, tipo_medida: str) -> pd.Series:
 _DESCR = {
     "encadear_variacao": "variação % mensal encadeada em número-índice",
     "var_12m": "variação % acumulada em 12 meses calculada a partir do número-índice",
+    "anualizar_dias_uteis": ("taxa acumulada no mês convertida para % a.a. pelos dias úteis do mês "
+                             "(feriados nacionais), base de 252 dias úteis"),
     "stl": "ajuste sazonal STL (Cleveland et al., 1990; período {periodo}, robusto, {escala})",
 }
 _NORM = {
@@ -163,6 +224,11 @@ def metodo(cfg: Config, id_serie: str) -> dict:
             ids.append("encadear")
             descr.append(_DESCR[n] + (f" ({arg} = 100)" if arg else ""))
             params.append({"passo": n, "base": arg})
+        elif n == "anualizar_dias_uteis":
+            ids.append("anual_du252")
+            descr.append(_DESCR[n])
+            params.append({"passo": n, "base_dias_uteis": BASE_DIAS_UTEIS,
+                           "feriados": "nacionais fixos e móveis; 20/11 desde 2024"})
         else:
             ids.append("var12m")
             descr.append(_DESCR[n])
@@ -203,6 +269,8 @@ def tratar(cfg: Config, id_serie: str, valores: pd.DataFrame) -> pd.Series:
             x = deflacionar(x, _serie(valores, arg))
         elif n == "var_12m":
             x = var_12m(x, f)
+        elif n == "anualizar_dias_uteis":
+            x = anualizar_dias_uteis(x, f)
         elif n == "stl":
             x = ajuste_stl(x, f, s["tipo_medida"])
     return x

@@ -36,9 +36,9 @@ def _bronze_ipeadata(pasta, id_serie, codigo, meses_valores, coletado_em):
 
 def test_mes_corrente_do_ipeadata_vai_para_rejeitadas(cfg, tmp_path):
     coleta = dt.datetime(2026, 11, 18, 12, 0, tzinfo=UTC)
-    _bronze_ipeadata(tmp_path, "br_juros", "PAN12_TJOVER12",
-                     [(dt.date(2026, 9, 1), 13.76), (dt.date(2026, 10, 1), 13.62),
-                      (dt.date(2026, 11, 1), 6.29)], coleta)
+    _bronze_ipeadata(tmp_path, "br_juros", "BM12_TJOVER12",
+                     [(dt.date(2026, 9, 1), 1.04), (dt.date(2026, 10, 1), 1.07),
+                      (dt.date(2026, 11, 1), 0.52)], coleta)
     obs, rej, meta = reconstruir(cfg, tmp_path)
 
     datas = set(obs.loc[obs.id_serie == "br_juros", "data_ref"])
@@ -59,3 +59,11 @@ def test_regra_vale_so_para_o_ipeadata_e_usa_horario_de_brasilia():
     virada = dt.datetime(2026, 12, 1, 2, 0, tzinfo=UTC)
     assert mes_parcial("Ipeadata", nov, virada)
     assert not mes_parcial("Ipeadata", dt.date(2026, 10, 1), virada)
+
+
+def test_coleta_de_codigo_antigo_e_ignorada(cfg, tmp_path):
+    # Bronze com o código usado antes da D40 (PAN12_TJOVER12): não entra na Silver.
+    coleta = dt.datetime(2026, 11, 18, 12, 0, tzinfo=UTC)
+    _bronze_ipeadata(tmp_path, "br_juros", "PAN12_TJOVER12", [(dt.date(2026, 9, 1), 13.76)], coleta)
+    obs, rej, meta = reconstruir(cfg, tmp_path)
+    assert obs.empty and rej.empty and meta.empty

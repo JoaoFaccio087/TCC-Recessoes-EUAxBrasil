@@ -17,7 +17,7 @@
 #   comexstat: parâmetros da API do Comex Stat (pais, fluxo)
 #   auxiliar: true = só serve de insumo a tratamentos (deflator); fora das métricas e da dim_serie
 #   tratamentos: passos 1 a 3 do texto 7.3 (tratamentos.py): encadear_variacao,
-#                {deflacionar: <id_serie auxiliar>}, var_12m, stl
+#                {deflacionar: <id_serie auxiliar>}, var_12m, anualizar_dias_uteis, stl
 
 series:
   eua_prod_ind:
@@ -174,19 +174,26 @@ series:
     grupo: juros
     fonte: Ipeadata
     produtor: Banco Central do Brasil
-    codigo_origem: PAN12_TJOVER12
+    codigo_origem: BM12_TJOVER12
     frequencia: M
     tipo_medida: taxa
-    unidade: "% a.a."
+    unidade: "% a.a. (acumulada no mês, anualizada por dias úteis, base 252)"
     ajuste_sazonal: false
     episodios: ["1981-1982", "2007-2009", "2020"]
     url: http://www.ipeadata.gov.br/
+    faixa: [0, 100]   # valor bruto: % acumulada no mês
+    # D40: a fonte é a taxa acumulada no mês; a anualização é feita pela pipeline.
+    tratamentos: [anualizar_dias_uteis]
     aviso_metodologia: >-
       Em 1981-1982 a taxa nominal acompanha a inflação da época; fora de H1 (D25).
       Não há série oficial do Banco Central para conferir os valores anteriores a ago/1986.
+      Taxa acumulada no mês anualizada pelos dias úteis (feriados nacionais), base 252 (D40);
+      em 1981-1982 a base de 252 dias úteis é hipótese do trabalho.
     conferido_em: >-
-      2026-11-17: unidade "(% a.a.)", "percentagem anualizada: elaboração IPEA"; não precisa
-      de conversão. 1974-01 a 2026-11, sem lacunas nas três janelas.
+      2026-11-18: BM12_TJOVER12, "Taxa de juros - Over / Selic - acumulada no mês", (% a.m.),
+      1974-01 em diante; PAN12_TJOVER12 (usada até a D40) é exatamente (1 + m)^12 - 1 desta
+      série. De 1986-07 em diante a taxa mensal bate com a capitalização das taxas diárias
+      na base de 252 dias úteis.
 
   eua_inflacao:
     nome: Inflação ao consumidor em 12 meses (EUA, CPI)

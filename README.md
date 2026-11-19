@@ -12,6 +12,8 @@ Trabalho de Conclusão de Curso · Engenharia de Software · UNIVAG · 2026
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Status](https://img.shields.io/badge/status-em%20desenvolvimento-orange)
 
+**[Acessar o painel](https://joaofaccio087.github.io/TCC-Recessoes-EUAxBrasil/painel/prototipo/)**
+
 </div>
 
 ---
@@ -64,19 +66,25 @@ O detalhamento das séries, dos limiares e das regras de cálculo está no capí
 
 ```text
 .
-├── documentacao/   Texto do TCC, decisões do grupo e materiais de apoio
-├── pipeline/       Engenharia de dados: coleta, tratamento, modelo dimensional e publicação
-└── painel/         Painel web em Vue 3 e TypeScript
+├── pipeline/                 Engenharia de dados (Python, pandas e DuckDB)
+│   ├── src/tcc_pipeline/     Coleta, camadas Bronze, Silver e Gold, validação e publicação
+│   ├── config/               Séries, episódios, pares e regras de cálculo
+│   ├── dados/publicacao/     Edições analíticas publicadas (Parquet e manifesto)
+│   ├── scripts/              Execução, agendamento e publicação
+│   ├── testes/               Testes automatizados
+│   ├── avaliacao/            Roteiro e questionário de usabilidade (SUS)
+│   ├── painel/               Painel de referência (Vue 3, TypeScript e DuckDB-Wasm)
+│   └── deshboard/            Dashboard alimentado pela edição ativa
+└── painel/
+    └── prototipo/            Protótipo publicado no GitHub Pages
 ```
-
-> Em organização: o código da pipeline e do painel está sendo reunido neste repositório a partir dos repositórios de trabalho de cada frente.
 
 ## Como executar
 
-As instruções de instalação e uso ficam no README de cada pasta:
+- **Painel:** acesse o [link publicado](https://joaofaccio087.github.io/TCC-Recessoes-EUAxBrasil/painel/prototipo/) ou abra `painel/prototipo/index.html` no navegador. Como atualizar os dados: [`painel/prototipo/README.md`](painel/prototipo/README.md).
+- **Pipeline:** instalação, chave da API do FRED, comandos e agendamento em [`pipeline/README.md`](pipeline/README.md). As decisões e o contrato de dados estão em [`pipeline/engenharia_de_dados.md`](pipeline/engenharia_de_dados.md).
 
-- [`pipeline/`](pipeline/README.md): ambiente Python, chave da API do FRED, comandos e agendamento.
-- [`painel/`](painel/README.md): instalação com npm e execução local.
+A cada edição publicada, o protótipo é gerado de novo com os dados da edição ativa.
 
 ## Equipe
 

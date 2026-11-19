@@ -5,6 +5,11 @@ valor (DOUBLE), unidade e símbolos de ausência. Em ``observacao`` entra uma li
 valor de ``(id_serie, data_ref)`` é novo ou mudou em relação à coleta anterior: a versão
 revisada é registrada sem apagar a anterior. Observações reprovadas vão para
 ``observacao_rejeitada`` com o motivo e não entram em ``observacao``.
+
+Mês parcial (D38): o Ipeadata publica o mês corrente com dados parciais (ex.: Over/Selic e
+Ibovespa acumulados no mês). Nas séries do Ipeadata, observações com ``data_ref`` igual ou
+posterior ao primeiro dia do mês da coleta vão para ``observacao_rejeitada`` com o motivo
+``MES_PARCIAL``. As outras fontes não publicam mês parcial e não passam por essa regra.
 """
 
 from __future__ import annotations
@@ -26,6 +31,10 @@ AUSENCIA = {"", ".", "..", "...", "-", "x", "X"}
 
 COLUNAS_OBS = ["id_serie", "data_ref", "valor", "coletado_em", "id_execucao", "arquivo_bronze"]
 COLUNAS_REJ = ["id_serie", "data_ref", "valor_bruto", "motivo", "coletado_em", "id_execucao"]
+MES_PARCIAL = "MES_PARCIAL"
+FONTES_COM_MES_PARCIAL = {"Ipeadata"}
+FUSO_BRASILIA = dt.timezone(dt.timedelta(hours=-3))  # sem horário de verão desde 2019
+
 COLUNAS_META = ["id_serie", "fonte", "codigo_origem", "ultima_coleta", "id_execucao",
                 "n_observacoes", "inicio", "fim"]
 
@@ -68,6 +77,19 @@ def padronizar(serie: dict, mod, data_bruta: str, valor_bruto, unidade: str | No
     return "ok", data, valor
 
 
+def mes_parcial(fonte: str, data: dt.date, coletado_em: dt.datetime) -> bool:
+    """True se a observação é do mês da coleta (ou posterior) numa fonte que publica mês parcial.
+
+    ``coletado_em`` com fuso é convertido para o horário de Brasília; sem fuso, é tratado como UTC.
+    """
+    if fonte not in FONTES_COM_MES_PARCIAL:
+        return False
+    if coletado_em.tzinfo is None:
+        coletado_em = coletado_em.replace(tzinfo=dt.timezone.utc)
+    local = coletado_em.astimezone(FUSO_BRASILIA)
+    return data >= dt.date(local.year, local.month, 1)
+
+
 def reconstruir(cfg: Config, pasta_dados: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     pasta_dados = Path(pasta_dados)
     ultimo: dict[tuple[str, dt.date], float] = {}
@@ -86,8 +108,8 @@ def reconstruir(cfg: Config, pasta_dados: Path) -> tuple[pd.DataFrame, pd.DataFr
             if hashlib.sha256(conteudo).hexdigest() != a["sha256"]:
                 raise ErroBronze(f"hash do Bronze não confere: {caminho}")
             mod = conector(a["fonte"])
-            coletado = (dt.datetime.fromisoformat(a["coletado_em"])
-                        .astimezone(dt.timezone.utc).replace(tzinfo=None))
+            coletado_tz = dt.datetime.fromisoformat(a["coletado_em"])
+            coletado = coletado_tz.astimezone(dt.timezone.utc).replace(tzinfo=None)
             n = 0
             datas = []
             for data_bruta, valor_bruto, unidade in mod.interpretar(conteudo):
@@ -97,6 +119,10 @@ def reconstruir(cfg: Config, pasta_dados: Path) -> tuple[pd.DataFrame, pd.DataFr
                                 x, coletado, id_exec))
                     continue
                 if estado == "ausente":
+                    continue
+                if mes_parcial(a["fonte"], data, coletado_tz):
+                    rej.append((id_s, data, None if valor_bruto is None else str(valor_bruto),
+                                MES_PARCIAL, coletado, id_exec))
                     continue
                 n += 1
                 datas.append(data)

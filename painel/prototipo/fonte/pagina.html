@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A recessão econômica: Estados Unidos × Brasil</title>
+<style>
+@font-face{font-family:'Fraunces';font-style:normal;font-weight:300 700;font-display:swap;src:url(data:font/woff2;base64,/*F_FRAUNCES*/) format('woff2')}
+@font-face{font-family:'Plex';font-weight:400;font-display:swap;src:url(data:font/woff2;base64,/*F_PLEX400*/) format('woff2')}
+@font-face{font-family:'Plex';font-weight:500;font-display:swap;src:url(data:font/woff2;base64,/*F_PLEX500*/) format('woff2')}
+@font-face{font-family:'Plex';font-weight:600;font-display:swap;src:url(data:font/woff2;base64,/*F_PLEX600*/) format('woff2')}
+:root{
+  --noite:#070D18; --fundo:#0B1322; --painel:#0E1828; --painel2:#122036; --linha:#1C2B42; --linha2:#26385A;
+  --texto:#EAF0F7; --texto2:#A9B6C8; --texto3:#728199;
+  --eua:#5B8FD9; --br:#2FA06E; --faixa:rgba(170,190,220,.07); --destaque:#E7C27D;
+  --serif:'Fraunces',Georgia,serif; --sans:'Plex',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--fundo);color:var(--texto);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:clip}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--texto);outline-offset:3px;border-radius:4px}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- capa ---------- */
+#capa{position:relative;min-height:100svh;background:radial-gradient(90% 80% at 72% 50%,#10203A 0%,var(--noite) 70%);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:center;overflow:hidden}
+#capa .texto{padding:0 0 40px clamp(20px,7vw,112px);max-width:640px;position:relative;z-index:1;transition:opacity .4s}
+body.com-gaveta #capa .texto{opacity:.15}
+.marca{font-size:14px;color:var(--texto3);letter-spacing:.02em;margin:0 0 28px}
+#capa h1{font-family:var(--serif);font-weight:300;font-size:clamp(44px,5.6vw,88px);line-height:.98;letter-spacing:-.02em;margin:0;font-variation-settings:'opsz' 144}
+#capa h1 em{font-style:normal;display:block;font-size:.52em;line-height:1.15;color:var(--texto2);margin-top:18px;letter-spacing:-.01em}
+#capa h1 em b{font-weight:300}
+#capa h1 em b.e{color:var(--eua)} #capa h1 em b.b{color:var(--br)}
+#capa .lead{font-size:clamp(17px,1.3vw,20px);line-height:1.6;color:var(--texto2);margin:28px 0 36px;max-width:28em}
+.escolha{display:flex;gap:12px;flex-wrap:wrap}
+.escolha button{display:flex;align-items:center;gap:12px;background:transparent;border:1px solid var(--linha2);border-radius:12px;padding:12px 18px 12px 14px;cursor:pointer;text-align:left;transition:border-color .2s,background .2s}
+.escolha button:hover{background:rgba(255,255,255,.035);border-color:#3A5079}
+.escolha i{width:10px;height:10px;border-radius:50%}
+.escolha span{display:block;font-size:16px;font-weight:500;line-height:1.2}
+.escolha small{display:block;font-size:13px;color:var(--texto3);line-height:1.3}
+#globo-box{position:relative;height:100svh;display:grid;place-items:center;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+@media (min-width:961px){body.com-gaveta #globo-box{transform:translateX(calc(-1 * min(260px,18vw)))}}
+@media (prefers-reduced-motion:reduce){#globo-box{transition:none}}
+#globo{width:min(100%,92svh);aspect-ratio:1;cursor:grab;touch-action:none;display:block}
+#globo.arrasto{cursor:grabbing} #globo.alvo{cursor:pointer}
+.dica{position:absolute;bottom:clamp(20px,4svh,40px);right:clamp(20px,4vw,56px);font-size:13px;color:var(--texto3);display:flex;align-items:center;gap:8px}
+.descer{position:absolute;left:clamp(20px,7vw,112px);bottom:clamp(20px,4svh,40px);font-size:14px;color:var(--texto2);text-decoration:none;display:flex;align-items:center;gap:10px}
+.descer:hover{color:var(--texto)}
+.descer svg{transition:transform .2s}.descer:hover svg{transform:translateY(3px)}
+
+/* ---------- gaveta ---------- */
+#veu{position:fixed;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.55),rgba(3,7,14,.1));opacity:0;pointer-events:none;transition:opacity .35s;z-index:20}
+#veu.on{opacity:1;pointer-events:auto}
+#gaveta{position:fixed;top:0;right:0;height:100svh;width:min(520px,100vw);background:var(--painel);border-left:1px solid var(--linha);z-index:21;transform:translateX(102%);transition:transform .45s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-30px 0 80px rgba(0,0,0,.4)}
+#gaveta.on{transform:none}
+@media (prefers-reduced-motion:reduce){#gaveta,#veu{transition:none}}
+.g-topo{display:flex;align-items:center;gap:12px;padding:26px 28px 6px}
+.g-topo i{width:10px;height:10px;border-radius:50%;background:var(--cor)}
+.g-topo h2{font-family:var(--serif);font-weight:400;font-size:26px;margin:0;flex:1;letter-spacing:-.01em}
+.fechar{width:40px;height:40px;border-radius:10px;border:0;background:transparent;color:var(--texto2);cursor:pointer;display:grid;place-items:center}
+.fechar:hover{background:rgba(255,255,255,.06);color:var(--texto)}
+.g-sub{padding:0 28px;color:var(--texto3);font-size:14px;margin:0}
+.linha-tempo{display:grid;grid-template-columns:repeat(3,1fr);margin:22px 28px 0;position:relative}
+.linha-tempo::before{content:'';position:absolute;left:8px;right:8px;top:7px;height:1px;background:var(--linha2)}
+.linha-tempo button{background:none;border:0;padding:0 0 14px;cursor:pointer;text-align:left;position:relative}
+.linha-tempo button::before{content:'';display:block;width:15px;height:15px;border-radius:50%;background:var(--painel);border:1px solid var(--linha2);margin-bottom:10px;position:relative;transition:all .2s}
+.linha-tempo button[aria-selected=true]::before{background:var(--cor);border-color:var(--cor);box-shadow:0 0 0 4px color-mix(in srgb,var(--cor) 22%,transparent)}
+.linha-tempo b{display:block;font-family:var(--serif);font-weight:400;font-size:20px;line-height:1.1;color:var(--texto2)}
+.linha-tempo button[aria-selected=true] b{color:var(--texto)}
+.linha-tempo small{font-size:12.5px;color:var(--texto3)}
+.g-corpo{flex:1;overflow:auto;padding:8px 28px 28px;border-top:1px solid var(--linha);scrollbar-width:thin}
+.g-conteudo{transition:opacity .18s ease}
+.g-conteudo.saindo{opacity:0}
+.g-ano{font-family:var(--serif);font-weight:300;font-size:56px;line-height:1;letter-spacing:-.02em;margin:26px 0 10px;font-variation-settings:'opsz' 144}
+.g-titulo{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.25;margin:0 0 8px}
+.g-periodo{font-size:14px;color:var(--texto3);margin:0 0 26px}
+.g-parte{padding:18px 0;border-top:1px solid var(--linha)}
+.g-parte h3{font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--cor);margin:0 0 6px}
+.g-parte p{margin:0;color:#CFD8E4;font-size:16px;line-height:1.65}
+.g-rodape{padding:16px 28px 22px;border-top:1px solid var(--linha);display:flex;gap:10px;align-items:center}
+.g-rodape small{flex:1;font-size:12.5px;color:var(--texto3);line-height:1.4}
+.botao{border:1px solid var(--linha2);background:transparent;border-radius:10px;padding:10px 16px;cursor:pointer;font-size:14px;font-weight:500}
+.botao:hover{background:rgba(255,255,255,.05)}
+.botao.cheio{background:var(--texto);color:var(--noite);border-color:var(--texto)}
+.botao.cheio:hover{background:#fff}
+
+/* ---------- seções ---------- */
+.secao{padding:clamp(80px,12vw,160px) clamp(20px,7vw,112px)}
+.rotulo-secao{font-size:14px;color:var(--texto3);margin:0 0 18px}
+.secao h2{font-family:var(--serif);font-weight:300;font-size:clamp(32px,3.6vw,52px);line-height:1.08;letter-spacing:-.015em;margin:0 0 20px;max-width:18em;font-variation-settings:'opsz' 144}
+.secao .intro{font-size:clamp(17px,1.25vw,19px);color:var(--texto2);max-width:36em;margin:0}
+#conceitos{background:var(--fundo)}
+.passos{margin-top:clamp(48px,6vw,80px);display:grid;gap:0}
+.passo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(24px,5vw,80px);padding:clamp(32px,4vw,56px) 0;border-top:1px solid var(--linha);align-items:center}
+.passo .n{font-family:var(--serif);font-size:15px;color:var(--texto3);margin:0 0 10px}
+.passo h3{font-family:var(--serif);font-weight:400;font-size:clamp(24px,2.2vw,32px);line-height:1.2;margin:0 0 14px;letter-spacing:-.01em}
+.passo p{margin:0 0 12px;color:var(--texto2);max-width:32em}
+.passo dl{margin:18px 0 0;display:grid;grid-template-columns:auto 1fr;gap:10px 18px;max-width:34em}
+.passo dt{font-weight:600;font-size:15px;color:var(--texto)}
+.passo dd{margin:0;color:var(--texto2);font-size:15px;line-height:1.55}
+.esquema{width:100%;height:auto;display:block}
+.esquema text{font-family:var(--sans);font-size:12px;fill:var(--texto2)}
+.esquema .t2{fill:var(--texto3)}
+
+/* ---------- explorar ---------- */
+#explorar{background:var(--noite);border-top:1px solid var(--linha)}
+.explorador{margin-top:clamp(40px,5vw,64px);display:grid;grid-template-columns:240px minmax(0,1fr);gap:clamp(24px,3vw,48px)}
+.trilho{display:flex;flex-direction:column;gap:2px;position:sticky;top:24px;align-self:start}
+.trilho h3{font-size:13px;color:var(--texto3);font-weight:500;margin:0 0 10px}
+.trilho button{display:flex;justify-content:space-between;align-items:center;background:transparent;border:0;border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;color:var(--texto2);font-size:15px}
+.trilho button:hover{background:rgba(255,255,255,.035);color:var(--texto)}
+.trilho button[aria-pressed=true]{background:var(--painel2);color:var(--texto)}
+.trilho button small{font-size:12px;color:var(--texto3)}
+.palco{min-width:0}
+.barra{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-bottom:28px}
+.segmento{display:inline-flex;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:4px}
+.segmento button{border:0;background:transparent;border-radius:9px;padding:8px 16px;cursor:pointer;color:var(--texto2);font-size:15px}
+.segmento button[aria-pressed=true]{background:var(--painel2);color:var(--texto);box-shadow:inset 0 0 0 1px var(--linha2)}
+.legenda{display:flex;gap:18px;font-size:14px;color:var(--texto2);align-items:center;flex-wrap:wrap}
+.legenda span{display:inline-flex;align-items:center;gap:8px}
+.legenda i{width:18px;height:2px;border-radius:2px;display:inline-block}
+.legenda .faixa{width:14px;height:12px;background:rgba(170,190,220,.14);border-radius:2px}
+.manchete{font-family:var(--serif);font-weight:400;font-size:clamp(22px,2vw,30px);line-height:1.3;margin:0 0 6px;max-width:30em;letter-spacing:-.005em}
+.manchete b{font-weight:500}
+.submanchete{color:var(--texto3);font-size:14px;margin:0 0 20px}
+.grafico{position:relative;background:var(--painel);border:1px solid var(--linha);border-radius:16px;padding:18px 8px 6px}
+.grafico svg{display:block;width:100%;overflow:visible}
+.grafico text{font-family:var(--sans)}
+.eixo text{fill:var(--texto3);font-size:12px}
+.eixo line,.eixo path{stroke:var(--linha)}
+.dica-graf{position:absolute;pointer-events:none;background:#0A1426;border:1px solid var(--linha2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5;min-width:170px;opacity:0;transition:opacity .12s;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.dica-graf b{font-weight:600}
+.dica-graf .l{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.dica-graf i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.medidas{display:grid;grid-template-columns:repeat(3,1fr);margin-top:28px;border-top:1px solid var(--linha)}
+.medida{padding:22px 24px 6px 0}
+.medida+.medida{padding-left:24px;border-left:1px solid var(--linha)}
+.medida h4{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--texto3)}
+.medida .valor{font-family:var(--serif);font-weight:300;font-size:40px;line-height:1.05;letter-spacing:-.01em}
+.medida .comp{font-size:14px;color:var(--texto2);margin-top:8px;line-height:1.5}
+.medida .comp i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:1px}
+.aviso{font-size:14px;color:var(--texto3);margin:18px 0 0;max-width:52em}
+.bloco-tres{margin-top:clamp(56px,7vw,96px)}
+.bloco-tres h3,.bloco-mapa h3{font-family:var(--serif);font-weight:400;font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+.bloco-tres>p,.bloco-mapa>p{color:var(--texto2);margin:0 0 24px;max-width:40em}
+.tres{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mini{background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:14px 12px 6px;cursor:pointer;text-align:left;transition:border-color .2s}
+.mini:hover{border-color:var(--linha2)}
+.mini[aria-pressed=true]{border-color:#3A5079}
+.mini h5{margin:0 4px 2px;font-family:var(--serif);font-weight:400;font-size:20px}
+.mini p{margin:0 4px 6px;font-size:13px;color:var(--texto3)}
+.mini svg{display:block;width:100%}
+.bloco-mapa{margin-top:clamp(56px,7vw,96px)}
+table.mapa{width:100%;border-collapse:collapse;font-size:15px}
+.mapa th{font-weight:500;color:var(--texto3);font-size:13px;text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha2)}
+.mapa td{padding:12px;border-bottom:1px solid var(--linha);vertical-align:middle}
+.mapa td:first-child{color:var(--texto);white-space:nowrap}
+.mapa tr{cursor:pointer}.mapa tbody tr:hover td{background:rgba(255,255,255,.02)}
+.cel{display:flex;align-items:center;gap:10px}
+.cel .v{min-width:82px;font-variant-numeric:tabular-nums}
+.cel .vazio{color:var(--texto3);font-size:13.5px}
+.cel svg{flex:none}
+footer{padding:48px clamp(20px,7vw,112px) 64px;border-top:1px solid var(--linha);color:var(--texto3);font-size:14px;display:grid;grid-template-columns:2fr 1fr;gap:32px;background:var(--noite)}
+footer p{margin:0 0 8px;max-width:48em}
+footer b{color:var(--texto2);font-weight:500}
+
+.segmento{position:relative}
+.segmento button{position:relative;z-index:1;transition:color .25s}
+.segmento button[aria-pressed=true]{background:transparent!important;box-shadow:none!important}
+.segmento .pilula{position:absolute;left:4px;top:4px;bottom:4px;border-radius:9px;background:var(--painel2);box-shadow:inset 0 0 0 1px var(--linha2);transition:transform .35s cubic-bezier(.2,.8,.2,1),width .35s cubic-bezier(.2,.8,.2,1)}
+.trilho button{transition:background .2s,color .2s}
+#manchete{transition:opacity .16s ease,transform .16s ease}
+#manchete.trocando{opacity:0;transform:translateY(4px)}
+.mapa td{transition:background .25s}
+.mapa tbody tr.ativo td{background:rgba(255,255,255,.025)}
+.mapa tbody tr.ativo td:first-child{box-shadow:inset 2px 0 0 var(--br)}
+.mapa tbody td.ativo{background:rgba(47,160,110,.10)!important}
+.medida .valor{min-height:42px}
+@media (prefers-reduced-motion:reduce){.segmento .pilula,#manchete{transition:none}}
+@media (max-width:960px){
+  #capa{grid-template-columns:1fr;align-content:start}
+  #capa .texto{padding:64px 20px 0}
+  #globo-box{height:auto;padding:24px 0 96px}
+  #globo{width:min(100%,560px)}
+  .dica{display:none}
+  .descer{left:20px}
+  .passo{grid-template-columns:1fr}
+  .explorador{grid-template-columns:1fr}
+  .trilho{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px}
+  .trilho h3{display:none}
+  .trilho button{white-space:nowrap;border:1px solid var(--linha);flex:none}
+  .trilho button small{display:none}
+  .medidas{grid-template-columns:1fr}
+  .medida+.medida{padding-left:0;border-left:0;border-top:1px solid var(--linha)}
+  .tres{grid-template-columns:1fr}
+  footer{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header id="capa">
+  <div class="texto">
+    <p class="marca">Trabalho de Conclusão de Curso em Engenharia de Software, UNIVAG</p>
+    <h1>A recessão econômica<em><b class="e">Estados Unidos</b> × <b class="b">Brasil</b></em></h1>
+    <p class="lead">Quando a maior economia do mundo entra em crise, o Brasil sente? Gire o globo e escolha um dos países para conhecer as três recessões que este estudo compara.</p>
+    <div class="escolha">
+      <button type="button" data-pais="eua"><i style="background:var(--eua)"></i><div><span>Estados Unidos</span><small>Onde as crises começaram</small></div></button>
+      <button type="button" data-pais="br"><i style="background:var(--br)"></i><div><span>Brasil</span><small>Como elas chegaram aqui</small></div></button>
+    </div>
+  </div>
+  <div id="globo-box">
+    <canvas id="globo" role="img" aria-label="Globo terrestre com os Estados Unidos e o Brasil em destaque. Arraste para girar e clique em um dos dois países."></canvas>
+  </div>
+  <a class="descer" href="#conceitos">Ver como a comparação funciona
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+  <div class="dica"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 13V5.5a1.5 1.5 0 013 0V12M11 11V4.5a1.5 1.5 0 013 0V12M14 11.5v-5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-.6a6 6 0 01-4.6-2.2L3.5 15a1.5 1.5 0 012.3-1.9L8 15"/></svg>Arraste para girar o globo</div>
+</header>
+
+<div id="veu"></div>
+<aside id="gaveta" role="dialog" aria-modal="true" aria-labelledby="g-pais" aria-hidden="true">
+  <div class="g-topo"><i></i><h2 id="g-pais"></h2>
+    <button type="button" class="fechar" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <p class="g-sub" id="g-sub"></p>
+  <div class="linha-tempo" role="tablist" aria-label="Recessões"></div>
+  <div class="g-corpo"><div class="g-conteudo" role="tabpanel"></div></div>
+  <div class="g-rodape"><small>Resumo histórico. Os números de cada indicador estão na seção Explorar os dados.</small>
+    <button type="button" class="botao cheio" id="g-dados">Ver os dados</button></div>
+</aside>
+
+<main>
+<section id="conceitos" class="secao">
+  <p class="rotulo-secao">Antes dos números</p>
+  <h2>Três ideias para ler as crises lado a lado</h2>
+  <p class="intro">As três recessões aconteceram em décadas diferentes, com moedas, juros e preços em outros patamares. Para compará-las sem distorção, cada série passa pelas mesmas regras.</p>
+  <div class="passos">
+    <article class="passo">
+      <div>
+        <p class="n">Primeira ideia</p>
+        <h3>Toda recessão tem um pico e um vale</h3>
+        <p>Recessão é uma queda forte e espalhada da atividade econômica, que dura meses. Nos Estados Unidos, quem marca as datas é o NBER, um instituto de pesquisa independente.</p>
+        <p>O <b>pico</b> é o último mês antes da queda. O <b>vale</b> é o ponto mais baixo, a partir do qual a economia volta a crescer.</p>
+      </div>
+      <svg class="esquema" viewBox="0 0 520 240" aria-label="Esquema de uma recessão com pico e vale">
+        <rect x="198" y="20" width="132" height="180" fill="rgba(170,190,220,.08)" rx="4"/>
+        <text x="264" y="40" text-anchor="middle" class="t2">recessão</text>
+        <path d="M20 150 C70 140 120 110 198 70 C240 95 280 175 330 182 C380 188 430 130 500 92" fill="none" stroke="var(--eua)" stroke-width="2.5"/>
+        <circle cx="198" cy="70" r="6" fill="var(--painel)" stroke="var(--texto)" stroke-width="2"/>
+        <text x="198" y="56" text-anchor="middle">pico</text>
+        <circle cx="330" cy="182" r="6" fill="var(--painel)" stroke="var(--texto)" stroke-width="2"/>
+        <text x="330" y="214" text-anchor="middle">vale</text>
+        <line x1="20" x2="500" y1="222" y2="222" stroke="var(--linha2)"/>
+        <text x="500" y="238" text-anchor="end" class="t2">tempo</text>
+      </svg>
+    </article>
+    <article class="passo">
+      <div>
+        <p class="n">Segunda ideia</p>
+        <h3>Todas as crises na mesma régua</h3>
+        <p>O mês de pico de cada crise vira o ponto zero. Os meses passam a ser contados a partir dele: 6 meses depois, 12 meses depois, e assim por diante.</p>
+        <p>Cada série também é medida em relação ao seu próprio valor no pico. Nos índices, o pico vale 100, e 90 significa uma queda de 10%. Nas taxas, como juros e desemprego, conta-se a diferença em pontos percentuais.</p>
+      </div>
+      <svg class="esquema" viewBox="0 0 520 240" aria-label="Esquema de duas crises de épocas diferentes alinhadas no pico">
+        <line x1="210" x2="210" y1="16" y2="206" stroke="var(--texto3)" stroke-dasharray="3 4"/>
+        <text x="210" y="226" text-anchor="middle">0 (pico)</text>
+        <line x1="20" x2="500" y1="78" y2="78" stroke="var(--linha2)"/>
+        <text x="24" y="70" class="t2">100</text>
+        <path d="M20 90 C90 86 150 80 210 78 C250 100 280 150 320 160 C380 172 440 120 500 96" fill="none" stroke="var(--eua)" stroke-width="2.5"/>
+        <path d="M20 70 C90 74 150 80 210 78 C240 120 260 190 300 192 C350 194 420 140 500 110" fill="none" stroke="var(--br)" stroke-width="2.5"/>
+        <text x="500" y="88" text-anchor="end">crise A</text>
+        <text x="500" y="128" text-anchor="end">crise B</text>
+        <text x="80" y="226" text-anchor="middle" class="t2">meses antes</text>
+        <text x="400" y="226" text-anchor="middle" class="t2">meses depois</text>
+      </svg>
+    </article>
+    <article class="passo">
+      <div>
+        <p class="n">Terceira ideia</p>
+        <h3>Quatro medidas para cada indicador</h3>
+        <p>Com as séries alinhadas, o estudo mede, para cada indicador e cada crise:</p>
+        <dl>
+          <dt>Reação</dt><dd>o primeiro mês em que a série passa do limite de queda definido para o seu grupo e fica além dele por meses seguidos.</dd>
+          <dt>Defasagem</dt><dd>quantos meses o Brasil reagiu depois (ou antes) dos Estados Unidos.</dd>
+          <dt>Pior momento</dt><dd>o ponto mais distante do pico nos 24 meses seguintes.</dd>
+          <dt>Recuperação</dt><dd>quantos meses a série levou para voltar ao nível do pico e se manter nele.</dd>
+        </dl>
+      </div>
+      <svg class="esquema" viewBox="0 0 520 260" aria-label="Esquema com reação, defasagem, pior momento e recuperação">
+        <line x1="60" x2="60" y1="20" y2="220" stroke="var(--texto3)" stroke-dasharray="3 4"/>
+        <line x1="20" x2="500" y1="70" y2="70" stroke="var(--linha2)"/>
+        <line x1="20" x2="500" y1="100" y2="100" stroke="var(--linha2)" stroke-dasharray="2 4"/>
+        <text x="496" y="94" text-anchor="end" class="t2">limite de reação</text>
+        <path d="M20 70 L60 70 C90 74 110 92 130 108 C170 150 200 190 240 196 C300 200 360 130 420 70 L500 66" fill="none" stroke="var(--eua)" stroke-width="2" opacity=".55"/>
+        <path d="M20 66 L60 70 C110 72 150 90 180 104 C210 150 240 206 270 210 C330 214 390 140 450 70 L500 64" fill="none" stroke="var(--br)" stroke-width="2.5"/>
+        <circle cx="128" cy="106" r="5" fill="var(--painel)" stroke="var(--eua)" stroke-width="2"/>
+        <circle cx="180" cy="104" r="5" fill="var(--painel)" stroke="var(--br)" stroke-width="2"/>
+        <path d="M128 40 V48 M128 44 H180 M180 40 V48" stroke="var(--destaque)" stroke-width="1.6" fill="none"/>
+        <text x="154" y="32" text-anchor="middle" fill="var(--destaque)" style="fill:var(--destaque)">defasagem</text>
+        <text x="110" y="128" text-anchor="end">reação</text>
+        <circle cx="270" cy="210" r="6" fill="var(--br)"/>
+        <text x="282" y="236">pior momento</text>
+        <rect x="444" y="64" width="12" height="12" transform="rotate(45 450 70)" fill="var(--br)"/>
+        <text x="450" y="50" text-anchor="middle">recuperação</text>
+        <text x="60" y="240" text-anchor="middle" class="t2">pico</text>
+      </svg>
+    </article>
+  </div>
+</section>
+
+<section id="explorar" class="secao">
+  <p class="rotulo-secao">Explorar os dados</p>
+  <h2>Compare as crises indicador por indicador</h2>
+  <p class="intro">Escolha um indicador e uma crise. As linhas mostram os Estados Unidos e o Brasil a partir do mesmo ponto de partida, o mês de pico.</p>
+  <div class="explorador">
+    <nav class="trilho" aria-label="Indicadores"><h3>Indicador</h3></nav>
+    <div class="palco">
+      <div class="barra">
+        <div class="segmento" role="group" aria-label="Crise" id="seg-ep"></div>
+        <div class="legenda">
+          <span><i style="background:var(--eua)"></i>Estados Unidos</span>
+          <span><i style="background:var(--br)"></i>Brasil</span>
+          <span><i class="faixa"></i>recessão nos EUA (NBER)</span>
+        </div>
+      </div>
+      <p class="manchete" id="manchete"></p>
+      <p class="submanchete" id="submanchete"></p>
+      <div class="grafico" id="graf"><div class="dica-graf" id="dica"></div></div>
+      <div class="medidas" id="medidas"></div>
+      <p class="aviso" id="aviso"></p>
+
+      <div class="bloco-tres">
+        <h3>As três crises, lado a lado</h3>
+        <p id="tres-sub">O mesmo indicador nas três recessões, com a mesma escala vertical. Clique em uma crise para vê-la em detalhe.</p>
+        <div class="tres" id="tres"></div>
+      </div>
+
+      <div class="bloco-mapa">
+        <h3>Quem reagiu primeiro</h3>
+        <p>Defasagem em todos os indicadores. Valores positivos indicam que o Brasil reagiu depois dos Estados Unidos. A ordem no tempo, sozinha, não prova que uma crise causou a outra.</p>
+        <table class="mapa" id="mapa"></table>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div>
+    <p><b>Fontes:</b> FRED (Federal Reserve Bank of St. Louis), Ipeadata (Ipea), IBGE/SIDRA e Comex Stat (MDIC). Datas das recessões americanas: NBER.</p>
+    <p><b>Método:</b> séries alinhadas no mês de pico de cada recessão americana. Regras de reação, pior momento e recuperação descritas no capítulo de Metodologia do trabalho.</p>
+    <p id="rod-edicao"></p>
+  </div>
+  <div>
+    <p><b>Equipe:</b> Arthur Napoli Di Loreto, Gabriel Pires Correa, João Pedro Faccio, Lucas Lellis Barros e Nicolly Mendes Cescon.</p>
+    <p><b>Orientação:</b> Prof. Germano Neto.</p>
+  </div>
+</footer>
+
+<script>/*D3*/</script>
+<script>
+window.PONTOS=/*PONTOS*/;
+window.ALVOS=/*ALVOS*/;
+window.DADOS=/*DADOS*/;
+</script>
+<script>/*APP*/</script>
+</body>
+</html>

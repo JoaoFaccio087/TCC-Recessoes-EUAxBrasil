@@ -65,6 +65,9 @@ body.com-gaveta #capa .texto{opacity:.15}
 .linha-tempo{display:grid;grid-template-columns:repeat(3,1fr);margin:22px 28px 0;position:relative}
 .linha-tempo::before{content:'';position:absolute;left:8px;right:8px;top:7px;height:1px;background:var(--linha2)}
 .linha-tempo button{background:none;border:0;padding:0 0 14px;cursor:pointer;text-align:left;position:relative}
+#gaveta:focus{outline:none}
+.linha-tempo button:focus-visible{outline:none}
+.linha-tempo button:focus-visible::before{box-shadow:0 0 0 3px var(--painel),0 0 0 5px var(--texto)}
 .linha-tempo button::before{content:'';display:block;width:15px;height:15px;border-radius:50%;background:var(--painel);border:1px solid var(--linha2);margin-bottom:10px;position:relative;transition:all .2s}
 .linha-tempo button[aria-selected=true]::before{background:var(--cor);border-color:var(--cor);box-shadow:0 0 0 4px color-mix(in srgb,var(--cor) 22%,transparent)}
 .linha-tempo b{display:block;font-family:var(--serif);font-weight:400;font-size:20px;line-height:1.1;color:var(--texto2)}
@@ -220,7 +223,7 @@ footer b{color:var(--texto2);font-weight:500}
 </header>
 
 <div id="veu"></div>
-<aside id="gaveta" role="dialog" aria-modal="true" aria-labelledby="g-pais" aria-hidden="true">
+<aside id="gaveta" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="g-pais" aria-hidden="true">
   <div class="g-topo"><i></i><h2 id="g-pais"></h2>
     <button type="button" class="fechar" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <p class="g-sub" id="g-sub"></p>
@@ -445,12 +448,15 @@ function desenhar(t){
     ctx.globalAlpha=1;
     ctx.strokeStyle=COR[k];ctx.globalAlpha=ativo?.9:.45;ctx.lineWidth=ativo?1.4:1;ctx.beginPath();caminho(FEAT[k]);ctx.stroke();ctx.globalAlpha=1;
   }
-  // arco de transmissão
+  // arco de transmissão: ponto elevado acima da superfície (altitude em frações do raio)
   ctx.save();ctx.beginPath();let ini=false;
-  for(let i=0;i<=60;i++){const c=arco(i/60);if(!visivel(c)){ini=false;continue}const xy=proj(c);
-    const h=Math.sin(Math.PI*i/60)*R*.12, dx=xy[0]-cx, dy=xy[1]-cy, n=Math.hypot(dx,dy)||1;
-    const x=xy[0]+dx/n*h, y=xy[1]+dy/n*h; if(!ini){ctx.moveTo(x,y);ini=true}else ctx.lineTo(x,y);}
-  ctx.strokeStyle='rgba(231,194,125,.75)';ctx.lineWidth=1.3;ctx.setLineDash([3,6]);ctx.lineDashOffset=MOV?-(t/60):0;ctx.stroke();ctx.restore();
+  for(let i=0;i<=80;i++){const k=i/80, c=arco(k), alt=Math.sin(Math.PI*k)*.16;
+    const z=Math.cos(d3.geoDistance(c,centro)), pr=proj(c), dx=pr[0]-cx, dy=pr[1]-cy;
+    const x=cx+dx*(1+alt), y=cy+dy*(1+alt);
+    const vis=z>0||Math.hypot(x-cx,y-cy)>R;
+    if(!vis){ini=false;continue}
+    if(!ini){ctx.moveTo(x,y);ini=true}else ctx.lineTo(x,y);}
+  ctx.strokeStyle='rgba(231,194,125,.8)';ctx.lineWidth=1.4;ctx.lineCap='round';ctx.lineJoin='round';ctx.setLineDash([3,6]);ctx.lineDashOffset=MOV?-(t/60):0;ctx.stroke();ctx.restore();
   // marcadores e rótulos
   ctx.font=`500 ${Math.max(12,R/26)}px Plex, system-ui, sans-serif`;
   for(const k of ['eua','br']){const c=LUGAR[k].c; if(!visivel(c)) continue; const [x,y]=proj(c);
@@ -503,7 +509,7 @@ function montarGaveta(troca){
   else{alvo.innerHTML=html;gav.querySelector('.g-corpo').scrollTop=0;}
 }
 function abrir(k){gPais=k;gPag=0;selecionado=k;ultimoFoco=document.activeElement;montarGaveta(false);girarPara(k);ocioso=false;
-  gav.classList.add('on');veu.classList.add('on');document.body.classList.add('com-gaveta');gav.setAttribute('aria-hidden','false');setTimeout(()=>gav.querySelector('.linha-tempo [aria-selected=true]').focus(),60);}
+  gav.classList.add('on');veu.classList.add('on');document.body.classList.add('com-gaveta');gav.setAttribute('aria-hidden','false');setTimeout(()=>gav.focus({preventScroll:true}),60);}
 function fechar(){gav.classList.remove('on');veu.classList.remove('on');document.body.classList.remove('com-gaveta');gav.setAttribute('aria-hidden','true');selecionado=null;if(ultimoFoco)ultimoFoco.focus();}
 gav.querySelector('.fechar').onclick=fechar;veu.onclick=fechar;
 document.addEventListener('keydown',e=>{if(!gav.classList.contains('on'))return;
@@ -762,6 +768,9 @@ function desenharMapa(){
 /* ---------- seletor com marcador deslizante ---------- */
 function moverPilula(){const b=seg.querySelector('[aria-pressed=true]');if(!b)return;const pl=seg.querySelector('.pilula');pl.style.width=b.offsetWidth+'px';pl.style.transform=`translateX(${b.offsetLeft-4}px)`;}
 seg.insertAdjacentHTML('afterbegin','<span class="pilula" aria-hidden="true"></span>');
+function alinharPilula(){const pl=seg.querySelector('.pilula');pl.style.transition='none';moverPilula();pl.offsetWidth;pl.style.transition='';}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(alinharPilula);
+new ResizeObserver(alinharPilula).observe(seg);
 
 function trocarTexto(el,html){
   if(!MOV||el.innerHTML===html){el.innerHTML=html;return;}

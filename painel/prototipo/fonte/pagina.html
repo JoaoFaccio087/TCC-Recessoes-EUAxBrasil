@@ -65,6 +65,9 @@ body.com-gaveta #capa .texto{opacity:.15}
 .linha-tempo{display:grid;grid-template-columns:repeat(3,1fr);margin:22px 28px 0;position:relative}
 .linha-tempo::before{content:'';position:absolute;left:8px;right:8px;top:7px;height:1px;background:var(--linha2)}
 .linha-tempo button{background:none;border:0;padding:0 0 14px;cursor:pointer;text-align:left;position:relative}
+#gaveta:focus{outline:none}
+.linha-tempo button:focus-visible{outline:none}
+.linha-tempo button:focus-visible::before{box-shadow:0 0 0 3px var(--painel),0 0 0 5px var(--texto)}
 .linha-tempo button::before{content:'';display:block;width:15px;height:15px;border-radius:50%;background:var(--painel);border:1px solid var(--linha2);margin-bottom:10px;position:relative;transition:all .2s}
 .linha-tempo button[aria-selected=true]::before{background:var(--cor);border-color:var(--cor);box-shadow:0 0 0 4px color-mix(in srgb,var(--cor) 22%,transparent)}
 .linha-tempo b{display:block;font-family:var(--serif);font-weight:400;font-size:20px;line-height:1.1;color:var(--texto2)}
@@ -220,7 +223,7 @@ footer b{color:var(--texto2);font-weight:500}
 </header>
 
 <div id="veu"></div>
-<aside id="gaveta" role="dialog" aria-modal="true" aria-labelledby="g-pais" aria-hidden="true">
+<aside id="gaveta" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="g-pais" aria-hidden="true">
   <div class="g-topo"><i></i><h2 id="g-pais"></h2>
     <button type="button" class="fechar" aria-label="Fechar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <p class="g-sub" id="g-sub"></p>

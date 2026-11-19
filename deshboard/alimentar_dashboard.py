@@ -5,9 +5,15 @@ O dashboard traz os dados embutidos em ``window.__DADOS__``, num formato própri
 converte para esse formato e regrava o bloco ``window.__DADOS__`` do HTML. Também grava
 os mesmos JSON em ``deshboard/data/`` (o dashboard os lê por HTTP quando o bloco não existe).
 
+Origem dos dados (D39): o branch ``dados`` do repositório, lido do worktree local desse branch
+(``TCC_REPO_DADOS`` no .env; padrão ``%USERPROFILE%\\tcc-local\\repo-dados``), pasta ``dados/``.
+É a mesma cópia que vai para o GitHub pelo ``scripts\\publicar_dados.ps1``: rode-o antes deste
+script (o ``scripts\\publicar_tudo.ps1`` já faz isso na ordem certa).
+
 Uso (na raiz do projeto):
     & $env:USERPROFILE\\tcc-local\\.venv\\Scripts\\python.exe deshboard\\alimentar_dashboard.py
     ... deshboard\\alimentar_dashboard.py --edicao 20261118-1349   # edição específica
+    ... deshboard\\alimentar_dashboard.py --origem C:\\outra\\pasta\\dados   # outra pasta de dados
 
 Diferenças entre o modelo da Gold e o do dashboard, e como foram resolvidas:
 - O dashboard tem pares fixos (uma série por país e indicador, ``id_serie_par``). Na Gold,
@@ -310,12 +316,25 @@ def gravar(dados: dict) -> None:
     HTML.write_text(novo, encoding="utf-8")
 
 
+def origem_padrao() -> Path:
+    """Pasta dados/ do worktree do branch ``dados`` (D39)."""
+    import os
+    repo = os.environ.get("TCC_REPO_DADOS") or Path(os.environ["USERPROFILE"]) / "tcc-local" / "repo-dados"
+    return Path(repo) / "dados"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--edicao", help="id da edição (padrão: a ativa em atual.json)")
+    ap.add_argument("--origem", help="pasta de dados (padrão: dados/ do worktree do branch dados)")
     args = ap.parse_args()
     cfgmod.carregar_env()
-    raiz_pub = cfgmod.pasta_dados() / "publicacao"
+    origem = Path(args.origem) if args.origem else origem_padrao()
+    raiz_pub = origem / "publicacao"
+    if not (raiz_pub / "atual.json").exists():
+        raise SystemExit(f"Nenhuma edição em {raiz_pub}. Rode antes o scripts\\publicar_dados.ps1 "
+                         "(ele atualiza o branch dados).")
+    print(f"Origem: {origem}")
     pasta = raiz_pub / "edicoes" / args.edicao if args.edicao else edicao_ativa(raiz_pub)
     dados = montar(pasta, raiz_pub)
     gravar(dados)

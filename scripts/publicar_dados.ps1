@@ -44,7 +44,19 @@ if (-not (Test-Path (Join-Path $Worktree '.git'))) {
 Invoke-Git -C $Worktree pull --ff-only origin dados
 
 # 2. Código atualizado com o main
-Invoke-Git -C $Worktree merge --no-edit origin/main
+# O main não versiona dados/ (D39). Quando um arquivo de dados/ mudou neste branch e foi
+# apagado no main, o merge dá conflito; ele é resolvido no passo 4 pela cópia nova dos dados
+# (git add). Conflito fora de dados/ interrompe o script com o merge desfeito.
+& git -C $Worktree merge --no-edit origin/main
+if ($LASTEXITCODE -ne 0) {
+    $conflitos = @(& git -C $Worktree diff --name-only --diff-filter=U)
+    $fora = @($conflitos | Where-Object { $_ -notlike 'dados/*' })
+    if ($conflitos.Count -eq 0 -or $fora.Count -gt 0) {
+        & git -C $Worktree merge --abort
+        throw "merge do main no branch dados com conflito fora de dados/: $($fora -join ', ')"
+    }
+    Write-Output "Merge do main: $($conflitos.Count) conflito(s) em dados/, resolvidos pela cópia nova."
+}
 
 # 3. Espelho dos dados (robocopy: códigos 0 a 7 são sucesso)
 $destino = Join-Path $Worktree 'dados'
@@ -54,8 +66,12 @@ if ($LASTEXITCODE -ge 8) { throw "robocopy falhou (código $LASTEXITCODE)" }
 # 4. Commit e envio
 # -f: dados/ fica no .gitignore do main (código); só neste branch a pasta é versionada.
 Invoke-Git -C $Worktree add -A -f dados
+$emMerge = Test-Path (Join-Path (& git -C $Worktree rev-parse --absolute-git-dir) 'MERGE_HEAD')
 & git -C $Worktree diff --cached --quiet
-if ($LASTEXITCODE -eq 0) {
+if ($LASTEXITCODE -eq 0 -and $emMerge) {
+    Invoke-Git -C $Worktree commit -q --no-edit
+    Write-Output 'Commit: merge do main (dados sem alterações).'
+} elseif ($LASTEXITCODE -eq 0) {
     Write-Output 'Dados sem alterações desde o último envio.'
 } else {
     $atual = Get-Content (Join-Path $dados 'publicacao\atual.json') -Raw -Encoding UTF8 | ConvertFrom-Json

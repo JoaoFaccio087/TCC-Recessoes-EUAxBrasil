@@ -92,6 +92,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publicar_dados.ps1 -SemEnviar
 
 O script usa um worktree em `%USERPROFILE%\tcc-local\repo-dados` (fora do OneDrive) e não roda enquanto a pipeline estiver com a trava. Como obter os dados sem rodar a pipeline: [`INSTRUCOES.md`](INSTRUCOES.md), seção 1.1.
 
+### Publicar tudo de uma vez (D39)
+
+Depois de conferir uma edição nova, um comando atualiza todos os destinos, na ordem, e para no primeiro erro:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publicar_tudo.ps1
+```
+
+1. branch `dados` (`publicar_dados.ps1`);
+2. dashboard (`deshboard\alimentar_dashboard.py`), que lê os dados do branch `dados` (worktree `TCC_REPO_DADOS`, padrão `%USERPROFILE%\tcc-local\repo-dados`); se mudou, commit e push do `main` e novo `publicar_dados.ps1`;
+3. branch `pipeline` do repositório do João (`pipeline/` = código do `main` + `dados/` do branch `dados`).
+
+No fim, o script mostra o `id_edicao` de cada destino. Ele faz push do `main` logo no início e **não** é chamado pelo `atualizar` nem pelo Agendador: rode à mão.
+
 ## Avaliação (SUS e conferência dos dados)
 
 O roteiro, as tarefas, o questionário e o modelo de respostas ficam em [`avaliacao/`](avaliacao/sus_roteiro.md).

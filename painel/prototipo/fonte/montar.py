@@ -11,6 +11,7 @@ rep={'/*F_FRAUNCES*/':b64(V/'@fontsource-variable/fraunces/files/fraunces-latin-
  '/*F_PLEX600*/':b64(V/'@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2'),
  '/*D3*/':(V/'d3/dist/d3.min.js').read_text(),
  '/*PONTOS*/':(A/'pontos.json').read_text(),'/*ALVOS*/':(A/'alvos.json').read_text(),'/*DADOS*/':(A/'dados.json').read_text(encoding='utf-8'),
+ '/*FAVICON*/':b64(A/'favicon.svg'),
  '/*APP*/':(A/'app.js').read_text(encoding='utf-8')}
 for k,v in rep.items():
     assert h.count(k)==1,k; h=h.replace(k,v)

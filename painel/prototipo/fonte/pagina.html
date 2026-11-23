@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,/*FAVICON*/">
 <title>A recessão econômica: Estados Unidos × Brasil</title>
 <style>
 @font-face{font-family:'Fraunces';font-style:normal;font-weight:300 700;font-display:swap;src:url(data:font/woff2;base64,/*F_FRAUNCES*/) format('woff2')}
@@ -26,7 +27,7 @@ button{font:inherit;color:inherit}
 
 /* ---------- capa ---------- */
 #capa{position:relative;min-height:100svh;background:radial-gradient(90% 80% at 72% 50%,#10203A 0%,var(--noite) 70%);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:center;overflow:hidden}
-#capa .texto{padding:0 0 40px clamp(20px,7vw,112px);max-width:640px;position:relative;z-index:1;transition:opacity .4s}
+#capa .texto{padding:0 0 40px clamp(20px,7vw,112px);max-width:640px;position:relative;z-index:3;transition:opacity .4s}
 body.com-gaveta #capa .texto{opacity:.15}
 .marca{font-size:14px;color:var(--texto3);letter-spacing:.02em;margin:0 0 28px}
 #capa h1{font-family:var(--serif);font-weight:300;font-size:clamp(44px,5.6vw,88px);line-height:.98;letter-spacing:-.02em;margin:0;font-variation-settings:'opsz' 144}
@@ -40,7 +41,7 @@ body.com-gaveta #capa .texto{opacity:.15}
 .escolha i{width:10px;height:10px;border-radius:50%}
 .escolha span{display:block;font-size:16px;font-weight:500;line-height:1.2}
 .escolha small{display:block;font-size:13px;color:var(--texto3);line-height:1.3}
-#globo-box{position:relative;height:100svh;display:grid;place-items:center;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+#globo-box{position:relative;z-index:1;height:100svh;display:grid;place-items:center;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
 @media (min-width:961px){body.com-gaveta #globo-box{transform:translateX(calc(-1 * min(260px,18vw)))}}
 @media (prefers-reduced-motion:reduce){#globo-box{transition:none}}
 #globo{width:min(100%,92svh);aspect-ratio:1;cursor:grab;touch-action:none;display:block}
@@ -48,6 +49,25 @@ body.com-gaveta #capa .texto{opacity:.15}
 .dica{position:absolute;bottom:clamp(20px,4svh,40px);right:clamp(20px,4vw,56px);font-size:13px;color:var(--texto3);display:flex;align-items:center;gap:8px}
 .descer{position:absolute;left:clamp(20px,7vw,112px);bottom:clamp(20px,4svh,40px);font-size:14px;color:var(--texto2);text-decoration:none;display:flex;align-items:center;gap:10px}
 .descer:hover{color:var(--texto)}
+/* céu da capa */
+#ceu,#frente{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#ceu{z-index:0} #frente{z-index:2}
+.descer,.dica{z-index:3}
+.esp-menu{position:absolute;top:clamp(16px,3svh,28px);right:clamp(16px,3vw,40px);z-index:5}
+#esp-botao{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(14,24,40,.55);border:1px solid var(--linha2);color:var(--texto2);cursor:pointer;opacity:.6;transition:opacity .2s,background .2s,color .2s;backdrop-filter:blur(6px)}
+#esp-botao:hover,#esp-botao[aria-expanded="true"]{opacity:1;color:var(--texto);background:rgba(18,32,54,.85)}
+#esp-painel{position:absolute;top:52px;right:0;width:260px;background:rgba(14,24,40,.94);border:1px solid var(--linha2);border-radius:14px;padding:16px 16px 14px;box-shadow:0 20px 60px rgba(0,0,0,.45);backdrop-filter:blur(10px)}
+#esp-painel h2{font-size:15px;font-weight:600;margin:0 0 10px}
+.chave{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;font-size:14px;color:var(--texto2);cursor:pointer}
+.chave+.chave{border-top:1px solid var(--linha)}
+.chave input{appearance:none;flex:none;width:34px;height:20px;border-radius:10px;background:var(--linha2);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.chave input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--texto2);transition:transform .2s,background .2s}
+.chave input:checked{background:#3C6FB8}
+.chave input:checked::after{transform:translateX(14px);background:#fff}
+#esp-todos{margin-top:10px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--linha2);background:transparent;font-size:13px;cursor:pointer}
+#esp-todos:hover{background:rgba(255,255,255,.04)}
+#esp-painel small{display:block;margin-top:10px;font-size:12px;color:var(--texto3);line-height:1.4}
+@media (prefers-reduced-motion:reduce){#esp-botao,.chave input,.chave input::after{transition:none}}
 .descer svg{transition:transform .2s}.descer:hover svg{transform:translateY(3px)}
 
 /* ---------- gaveta ---------- */
@@ -184,7 +204,7 @@ footer b{color:var(--texto2);font-weight:500}
 @media (prefers-reduced-motion:reduce){.segmento .pilula,#manchete{transition:none}}
 @media (max-width:960px){
   #capa{grid-template-columns:1fr;align-content:start}
-  #capa .texto{padding:64px 20px 0}
+  #capa .texto{padding:76px 20px 0}
   #globo-box{height:auto;padding:24px 0 96px}
   #globo{width:min(100%,560px)}
   .dica{display:none}
@@ -205,6 +225,22 @@ footer b{color:var(--texto2);font-weight:500}
 <body>
 
 <header id="capa">
+  <canvas id="ceu" aria-hidden="true"></canvas>
+  <canvas id="frente" aria-hidden="true"></canvas>
+  <div class="esp-menu">
+    <button type="button" id="esp-botao" aria-expanded="false" aria-controls="esp-painel" aria-label="Detalhes do espaço" title="Detalhes do espaço">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-24 12 12)"/></svg>
+    </button>
+    <div id="esp-painel" hidden>
+      <h2>Detalhes do espaço</h2>
+      <label class="chave"><span>Estrelas e Via Láctea</span><input type="checkbox" data-esp="estrelas"></label>
+      <label class="chave"><span>Lua</span><input type="checkbox" data-esp="lua"></label>
+      <label class="chave"><span>Estação Espacial Internacional</span><input type="checkbox" data-esp="iss"></label>
+      <label class="chave"><span>Satélites</span><input type="checkbox" data-esp="satelites"></label>
+      <button type="button" id="esp-todos">Deixar só o globo</button>
+      <small>Elementos ilustrativos, fora de escala. A escolha fica salva neste navegador.</small>
+    </div>
+  </div>
   <div class="texto">
     <p class="marca">Trabalho de Conclusão de Curso em Engenharia de Software, UNIVAG</p>
     <h1>A recessão econômica<em><b class="e">Estados Unidos</b> × <b class="b">Brasil</b></em></h1>

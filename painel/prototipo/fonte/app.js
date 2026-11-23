@@ -157,7 +157,7 @@ const ORB={
   sats:[{a:1.3,b:.62,tilt:-.75,per:24,fase:1.1},{a:1.42,b:.16,tilt:.08,per:31,fase:4.2},{a:1.24,b:.9,tilt:1.25,per:21,fase:5.3}]
 };
 function posOrb(o,t,cx,cy){
-  const th=o.fase+(MOV?t/1000:0)*2*Math.PI/o.per, x=Math.cos(th)*o.a*R, y=Math.sin(th)*o.b*R, c=Math.cos(o.tilt), s=Math.sin(o.tilt);
+  const th=o.fase+(o.desl||0)+(MOV?t/1000:0)*2*Math.PI/o.per, x=Math.cos(th)*o.a*R, y=Math.sin(th)*o.b*R, c=Math.cos(o.tilt), s=Math.sin(o.tilt);
   return {x:cx+x*c-y*s, y:cy+x*s+y*c, z:Math.sin(th), ang:o.tilt+Math.atan2(Math.cos(th)*o.b,-Math.sin(th)*o.a)};
 }
 // Objetos pré-renderizados uma vez em canvas fora da tela, com luz vinda do alto à esquerda (a mesma do globo).
@@ -279,15 +279,41 @@ function desenharEspaco(t){
   // atmosfera (antes cortada pelo canvas do globo)
   const g=cc.createRadialGradient(cx,cy,R*.92,cx,cy,R*1.32);g.addColorStop(0,'rgba(91,143,217,.17)');g.addColorStop(1,'rgba(91,143,217,0)');
   cc.fillStyle=g;cc.beginPath();cc.arc(cx,cy,R*1.32,0,7);cc.fill();
-  const objs=[];
+  // inércia depois de soltar um objeto arrastado
+  for(const o of [ORB.lua,ORB.iss,...ORB.sats])if(o!==arrasteEsp?.ref&&o.vel){o.desl=(o.desl||0)+o.vel;o.vel*=.955;if(Math.abs(o.vel)<1e-4)o.vel=0;}
+  const objs=[];espCentro=[cx,cy];espAlvos=[];
+  const alvo=(ref,geo,p,raio,nome)=>{if(!(p.z<0&&Math.hypot(p.x-cx,p.y-cy)<R))espAlvos.push({ref,geo,p,raio,nome});};
   if(esp.lua){// a órbita da Lua encolhe quando não cabe na tela
-    const L=ORB.lua, f=Math.max(.62,Math.min(1,((CW-cx)/R-.14)/L.a,((CH-cy)/R-.1)/L.b)), o={...L,a:L.a*f,b:L.b*f};
-    objs.push([posOrb(o,t,cx,cy),(k,p)=>lua(k,p)]);}
-  if(esp.iss){objs.push([posOrb(ORB.iss,t,cx,cy),(k,p)=>estacao(k,p,t)]);}
-  if(esp.satelites)ORB.sats.forEach((o,i)=>objs.push([posOrb(o,t,cx,cy),(k,p)=>satelite(k,p,t,i)]));
+    const L=ORB.lua, f=Math.max(.62,Math.min(1,((CW-cx)/R-.14)/L.a,((CH-cy)/R-.1)/L.b)), o={...L,a:L.a*f,b:L.b*f}, p=posOrb(o,t,cx,cy);
+    objs.push([p,(k,p)=>lua(k,p)]);alvo(L,o,p,R*.062+8,'Lua');}
+  if(esp.iss){const p=posOrb(ORB.iss,t,cx,cy);objs.push([p,(k,p)=>estacao(k,p,t)]);alvo(ORB.iss,ORB.iss,p,Math.max(24,R*.06),'Estação Espacial Internacional');}
+  if(esp.satelites)ORB.sats.forEach((o,i)=>{const p=posOrb(o,t,cx,cy);objs.push([p,(k,p)=>satelite(k,p,t,i)]);alvo(o,o,p,Math.max(16,R*.03),'Satélite');});
   objs.sort((a,b)=>a[0].z-b[0].z);
   for(const [p,f] of objs)f(p.z>0?fc:cc,p);
+  if(arrasteEsp||hoverEsp){const h=arrasteEsp||hoverEsp, a=espAlvos.find(x=>x.ref===h.ref);
+    if(a){rotuloEsp.textContent=a.nome;rotuloEsp.style.transform=`translate(${a.p.x+a.raio+6}px,${a.p.y-12}px)`;rotuloEsp.hidden=false;}else rotuloEsp.hidden=true;}
+  else rotuloEsp.hidden=true;
 }
+
+// arrastar a Lua, a Estação e os satélites ao longo da própria órbita, com inércia ao soltar
+let espAlvos=[],espCentro=[0,0],arrasteEsp=null,hoverEsp=null;
+const rotuloEsp=document.getElementById('esp-rotulo');
+function noCapa(e){const b=capa.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top];}
+function alvoEm(x,y){let m=null,d=1e9;for(const a of espAlvos){const q=Math.hypot(x-a.p.x,y-a.p.y);if(q<a.raio&&(q<d||(m&&a.p.z>m.p.z))){m=a;d=q;}}return m;}
+function anguloNaOrbita(g,x,y){const dx=x-espCentro[0],dy=y-espCentro[1],c=Math.cos(g.tilt),s=Math.sin(g.tilt);
+  return Math.atan2((-dx*s+dy*c)/(g.b*R),(dx*c+dy*s)/(g.a*R));}
+const giro=d=>Math.atan2(Math.sin(d),Math.cos(d));
+capa.addEventListener('pointerdown',e=>{if(e.button!==0)return;const [x,y]=noCapa(e),a=alvoEm(x,y);if(!a)return;
+  e.stopPropagation();e.preventDefault();a.ref.vel=0;
+  arrasteEsp={ref:a.ref,geo:a.geo,ang:anguloNaOrbita(a.geo,x,y)};capa.setPointerCapture(e.pointerId);capa.classList.add('arrastando-obj');},true);
+capa.addEventListener('pointermove',e=>{const [x,y]=noCapa(e);
+  if(arrasteEsp){const g=arrasteEsp.geo,n=anguloNaOrbita(g,x,y),d=giro(n-arrasteEsp.ang);arrasteEsp.ang=n;
+    arrasteEsp.ref.desl=(arrasteEsp.ref.desl||0)+d;arrasteEsp.ref.vel=d*.5;return;}
+  if(e.target.closest('.texto,.esp-menu'))return;
+  const a=alvoEm(x,y);hoverEsp=a?{ref:a.ref}:null;capa.classList.toggle('sobre-obj',!!a);},true);
+function soltarEsp(){if(!arrasteEsp)return;if(!MOV)arrasteEsp.ref.vel=0;arrasteEsp=null;capa.classList.remove('arrastando-obj');}
+capa.addEventListener('pointerup',soltarEsp,true);capa.addEventListener('pointercancel',soltarEsp,true);
+capa.addEventListener('pointerleave',()=>{hoverEsp=null;capa.classList.remove('sobre-obj');});
 
 // menu do espaço
 const espBotao=document.getElementById('esp-botao'), espPainel=document.getElementById('esp-painel'), espTodos=document.getElementById('esp-todos');

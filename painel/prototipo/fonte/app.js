@@ -52,11 +52,8 @@ function visivel(c){const r=proj.rotate();return d3.geoDistance(c,[-r[0],-r[1]])
 function desenhar(t){
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,W);
   const cx=W/2,cy=W/2;
-  // atmosfera
-  let g=ctx.createRadialGradient(cx,cy,R*.92,cx,cy,R*1.25);g.addColorStop(0,'rgba(91,143,217,.16)');g.addColorStop(1,'rgba(91,143,217,0)');
-  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R*1.25,0,7);ctx.fill();
-  // esfera
-  g=ctx.createRadialGradient(cx-R*.35,cy-R*.4,R*.1,cx,cy,R);g.addColorStop(0,'#16294A');g.addColorStop(1,'#0A1426');
+  // esfera (a atmosfera é desenhada no céu, sem o limite do canvas do globo)
+  let g=ctx.createRadialGradient(cx-R*.35,cy-R*.4,R*.1,cx,cy,R);g.addColorStop(0,'#16294A');g.addColorStop(1,'#0A1426');
   ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
   ctx.strokeStyle='rgba(120,150,200,.07)';ctx.lineWidth=.6;ctx.beginPath();caminho(grat);ctx.stroke();
   // pontos de terra
@@ -102,7 +99,7 @@ function loop(t){
   if(alvoRot){const k=Math.min(1,(t-alvoRot.t)/900),e=d3.easeCubicInOut(k);proj.rotate(alvoRot.i(e));if(k>=1)alvoRot=null;}
   else if(!arrastando&&(Math.abs(vel[0])>.01||Math.abs(vel[1])>.01)){const r=proj.rotate();proj.rotate([r[0]+vel[0],Math.max(-60,Math.min(60,r[1]+vel[1])),0]);vel=[vel[0]*.94,vel[1]*.94];}
   else if(ocioso&&MOV){const r=proj.rotate();proj.rotate([r[0]+.035,r[1],0]);}
-  desenhar(t);requestAnimationFrame(loop);
+  desenhar(t);desenharEspaco(t);requestAnimationFrame(loop);
 }
 function girarPara(k){const c=LUGAR[k].c;const de=proj.rotate();let alvo=[-c[0],-c[1]*.6,0];
   let dl=alvo[0]-de[0];dl=((dl+540)%360)-180;alvo[0]=de[0]+dl;
@@ -120,6 +117,192 @@ cv.addEventListener('pointermove',e=>{
 cv.addEventListener('pointerup',e=>{arrastando=false;cv.classList.remove('arrasto');if(movido<5){const k=paisEm(e);if(k)abrir(k);}});
 cv.addEventListener('pointerleave',()=>{hover=null;cv.classList.remove('alvo')});
 new ResizeObserver(medir).observe(cv);medir();requestAnimationFrame(loop);
+
+/* =================== espaço =================== */
+// Céu da capa: estrelas, Via Láctea, atmosfera do globo e objetos em órbita (ilustrativos, fora de escala).
+// Duas camadas: #ceu fica atrás do globo (a esfera opaca esconde o que passa por trás) e #frente fica na frente.
+const capa=document.getElementById('capa');
+const ceu=document.getElementById('ceu'), cc=ceu.getContext('2d');
+const frente=document.getElementById('frente'), fc=frente.getContext('2d');
+const ESP_ITENS=['estrelas','lua','iss','satelites'];
+const esp={estrelas:true,lua:true,iss:true,satelites:true};
+try{const s=JSON.parse(localStorage.getItem('tcc-espaco')||'{}');for(const k of ESP_ITENS)if(typeof s[k]==='boolean')esp[k]=s[k];}catch(e){}
+function salvarEsp(){try{localStorage.setItem('tcc-espaco',JSON.stringify(esp))}catch(e){}}
+let CW=0,CH=0,estrelas=[],via=null,capaVisivel=true;
+function medirCeu(){
+  const b=capa.getBoundingClientRect();CW=b.width;CH=b.height;const d=Math.min(2,devicePixelRatio||1);
+  for(const c of [ceu,frente]){c.width=Math.round(CW*d);c.height=Math.round(CH*d);c.getContext('2d').setTransform(d,0,0,d,0,0);}
+  const rnd=d3.randomLcg(11);
+  estrelas=Array.from({length:Math.round(CW*CH/3600)},()=>{const q=rnd();
+    return {x:rnd()*CW,y:rnd()*CH,r:.35+Math.pow(rnd(),4)*1.4,a:.18+rnd()*.6,f:rnd()*6.28,v:.4+rnd()*1.6,p:.15+rnd()*.85,
+      cor:q<.1?'201,216,255':q<.16?'255,226,190':'255,255,255'};});
+  // Via Láctea: faixa diagonal pré-desenhada uma vez
+  via=document.createElement('canvas');via.width=Math.round(CW*d);via.height=Math.round(CH*d);
+  const vc=via.getContext('2d');vc.setTransform(d,0,0,d,0,0);
+  vc.translate(CW*.42,CH*.5);vc.rotate(-.42);
+  const L=Math.hypot(CW,CH);
+  for(const [w,a] of [[CH*.34,.035],[CH*.16,.04],[CH*.06,.03]]){
+    const g=vc.createLinearGradient(0,-w,0,w);g.addColorStop(0,'rgba(120,150,220,0)');g.addColorStop(.5,`rgba(150,170,230,${a})`);g.addColorStop(1,'rgba(120,150,220,0)');
+    vc.fillStyle=g;vc.fillRect(-L,-w,L*2,w*2);}
+  const nrnd=d3.randomNormal.source(d3.randomLcg(5))(0,CH*.07);
+  for(let i=0;i<Math.round(CW*1.4);i++){const x=(rnd()-.5)*L,y=nrnd();vc.fillStyle=`rgba(220,230,255,${.05+rnd()*.22})`;vc.fillRect(x,y,.7,.7);}
+}
+new ResizeObserver(medirCeu).observe(capa);medirCeu();
+new IntersectionObserver(e=>{capaVisivel=e[0].isIntersecting}).observe(capa);
+
+// órbitas em unidades do raio do globo: a = semieixo, b = achatamento (inclinação vista), tilt = giro no plano da tela
+const ORB={
+  lua:{a:1.62,b:1.12,tilt:-.22,per:52,fase:.3},
+  iss:{a:1.14,b:.42,tilt:.42,per:15,fase:2.4},
+  sats:[{a:1.3,b:.62,tilt:-.75,per:24,fase:1.1},{a:1.42,b:.16,tilt:.08,per:31,fase:4.2},{a:1.24,b:.9,tilt:1.25,per:21,fase:5.3}]
+};
+function posOrb(o,t,cx,cy){
+  const th=o.fase+(MOV?t/1000:0)*2*Math.PI/o.per, x=Math.cos(th)*o.a*R, y=Math.sin(th)*o.b*R, c=Math.cos(o.tilt), s=Math.sin(o.tilt);
+  return {x:cx+x*c-y*s, y:cy+x*s+y*c, z:Math.sin(th), ang:o.tilt+Math.atan2(Math.cos(th)*o.b,-Math.sin(th)*o.a)};
+}
+// Objetos pré-renderizados uma vez em canvas fora da tela, com luz vinda do alto à esquerda (a mesma do globo).
+const SOL=(()=>{const v=[-.55,-.6,.58],n=Math.hypot(...v);return v.map(x=>x/n)})();
+function ruido2(seed){ // value noise suave, determinístico
+  const rnd=d3.randomLcg(seed),N=256,perm=new Uint8Array(N*2),val=new Float32Array(N);
+  for(let i=0;i<N;i++){perm[i]=i;val[i]=rnd();}
+  for(let i=N-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]];}
+  for(let i=0;i<N;i++)perm[N+i]=perm[i];
+  const sm=t=>t*t*(3-2*t), h=(x,y,z)=>val[perm[perm[perm[x&255]+(y&255)]+(z&255)]];
+  return (x,y,z)=>{const X=Math.floor(x),Y=Math.floor(y),Z=Math.floor(z),fx=sm(x-X),fy=sm(y-Y),fz=sm(z-Z);
+    const l=(a,b,t)=>a+(b-a)*t;
+    return l(l(l(h(X,Y,Z),h(X+1,Y,Z),fx),l(h(X,Y+1,Z),h(X+1,Y+1,Z),fx),fy),
+             l(l(h(X,Y,Z+1),h(X+1,Y,Z+1),fx),l(h(X,Y+1,Z+1),h(X+1,Y+1,Z+1),fx),fy),fz);};
+}
+function fbm(n,x,y,z,o){let s=0,a=.5,f=1;for(let i=0;i<o;i++){s+=a*n(x*f,y*f,z*f);a*=.5;f*=2.03;}return s;}
+
+const SPRITE={};
+function renderLua(S){
+  const c=document.createElement('canvas');c.width=c.height=S;const k=c.getContext('2d'),img=k.createImageData(S,S),d=img.data;
+  const n=ruido2(3), rnd=d3.randomLcg(9), r0=S/2-1;
+  // crateras em direções aleatórias da esfera
+  const crat=Array.from({length:160},()=>{const u=rnd()*2-1,t=rnd()*6.283,s=Math.sqrt(1-u*u);
+    return {v:[s*Math.cos(t),s*Math.sin(t),u],r:.01+Math.pow(rnd(),4)*.08,raio:rnd()<.06}});
+  const H=new Float32Array(S*S),A=new Float32Array(S*S),M=new Uint8Array(S*S);
+  for(let j=0;j<S;j++)for(let i=0;i<S;i++){
+    const x=(i+.5-S/2)/r0,y=(j+.5-S/2)/r0,q=x*x+y*y;if(q>1)continue;const z=Math.sqrt(1-q),o=j*S+i;M[o]=1;
+    // mares: manchas escuras de baixa frequência
+    const mq=Math.max(0,Math.min(1,(fbm(n,x*1.2+4.3,y*1.2+1.7,z*1.2+.5,5)-.56)/.07)),mar=mq*mq*(3-2*mq);
+    let h=fbm(n,x*12,y*12,z*12,4)*.006, alb=.9-.5*mar+(fbm(n,x*18+9,y*18,z*18,4)-.5)*.16;
+    for(const cr of crat){const dot=x*cr.v[0]+y*cr.v[1]+z*cr.v[2];if(dot<.7)continue;
+      const ang=Math.acos(Math.min(1,dot))/cr.r;
+      if(cr.raio&&ang<6)alb+=.1*Math.exp(-ang*.8)*(1-mar*.5);
+      if(ang>1.5)continue;
+      h+=cr.r*(ang<1?(ang*ang-1)*.22:Math.exp(-((ang-1)*(ang-1))/.03)*.07);
+      if(ang<1.2)alb+=.07*(1-mar);}
+    H[o]=h;A[o]=alb;}
+  for(let j=0;j<S;j++)for(let i=0;i<S;i++){const o=j*S+i;if(!M[o])continue;
+    const x=(i+.5-S/2)/r0,y=(j+.5-S/2)/r0,z=Math.sqrt(Math.max(0,1-x*x-y*y));
+    const hx=(M[o+1]?H[o+1]:H[o])-(M[o-1]?H[o-1]:H[o]), hy=(M[o+S]?H[o+S]:H[o])-(M[o-S]?H[o-S]:H[o]);
+    let nx=x-hx*S*.35,ny=y-hy*S*.35,nz=z;const nl=Math.hypot(nx,ny,nz);nx/=nl;ny/=nl;nz/=nl;
+    const lam=Math.max(0,nx*SOL[0]+ny*SOL[1]+nz*SOL[2]);
+    const lim=Math.pow(z,.25); // escurece de leve a borda
+    const v=Math.min(1,A[o]*(Math.pow(lam,.7)*1.08+.03)*lim);
+    const aa=Math.max(0,Math.min(1,(1-Math.hypot(x,y))*r0*1.2)); // borda suavizada
+    d[o*4]=v*232;d[o*4+1]=v*229;d[o*4+2]=v*222;d[o*4+3]=255*aa;}
+  k.putImageData(img,0,0);return c;
+}
+function painelSolar(k,x,y,w,h,cor){ // painel com células, reflexo e moldura
+  const g=k.createLinearGradient(x,y,x+w,y+h);for(const [o,c] of cor)g.addColorStop(o,c);
+  k.fillStyle=g;k.fillRect(x,y,w,h);
+  k.strokeStyle='rgba(0,0,0,.35)';k.lineWidth=Math.max(.5,w/60);
+  for(let i=1;i<6;i++){k.beginPath();k.moveTo(x+w*i/6,y);k.lineTo(x+w*i/6,y+h);k.stroke();}
+  for(let i=1;i<3;i++){k.beginPath();k.moveTo(x,y+h*i/3);k.lineTo(x+w,y+h*i/3);k.stroke();}
+  k.strokeStyle='rgba(255,255,255,.18)';k.strokeRect(x,y,w,h);
+}
+function cilindro(k,x,y,w,h,claro,escuro){const g=k.createLinearGradient(0,y,0,y+h);g.addColorStop(0,escuro);g.addColorStop(.3,claro);g.addColorStop(1,escuro);k.fillStyle=g;k.beginPath();k.roundRect(x,y,w,h,h*.35);k.fill();}
+function renderISS(){ // vista de cima, eixo da treliça na horizontal; unidade = 1/100 da largura
+  const W=400,H=260,c=document.createElement('canvas');c.width=W;c.height=H;const k=c.getContext('2d');k.translate(W/2,H/2);
+  const ouro=[[0,'#1E1712'],[.35,'#5E4630'],[.55,'#A07A4E'],[.75,'#4C3826'],[1,'#1E1712']];
+  for(const sx of [-1,1])for(const off of [46,76])for(const sy of [-1,1])
+    painelSolar(k,sx*off-13,sy>0?14:-14-88,26,88,ouro);
+  // treliça principal
+  const gt=k.createLinearGradient(0,-6,0,6);gt.addColorStop(0,'#5E6672');gt.addColorStop(.4,'#E6EAF0');gt.addColorStop(1,'#59606B');
+  k.fillStyle=gt;k.fillRect(-170,-5,340,10);
+  k.strokeStyle='rgba(40,46,56,.6)';k.lineWidth=1;for(let x=-165;x<170;x+=10){k.beginPath();k.moveTo(x,-5);k.lineTo(x+10,5);k.stroke();}
+  // radiadores brancos
+  k.fillStyle='rgba(235,240,246,.9)';for(const sx of [-1,1]){k.fillRect(sx*24-6,8,12,40);k.fillRect(sx*24-6,-48,12,40);}
+  // módulos pressurizados (eixo vertical)
+  cilindro(k,-11,-70,22,140,'#F1F3F6','#7E8693');
+  cilindro(k,-30,-40,60,16,'#ECEFF3','#7A828F');cilindro(k,-26,30,52,14,'#ECEFF3','#7A828F');
+  const s=document.createElement('canvas');s.width=W;s.height=H;s.getContext('2d').drawImage(c,0,0);return c;
+}
+function renderSat(){
+  const W=200,H=80,c=document.createElement('canvas');c.width=W;c.height=H;const k=c.getContext('2d');k.translate(W/2,H/2);
+  const azul=[[0,'#070D1C'],[.45,'#18294A'],[.6,'#3A5584'],[1,'#070D1C']];
+  painelSolar(k,-96,-18,70,36,azul);painelSolar(k,26,-18,70,36,azul);
+  k.fillStyle='#8A8F98';k.fillRect(-26,-2,52,4);
+  const g=k.createLinearGradient(-20,-22,20,22);g.addColorStop(0,'#E9C77E');g.addColorStop(.45,'#A27630');g.addColorStop(.7,'#C99A4A');g.addColorStop(1,'#4A3212');
+  k.fillStyle=g;k.beginPath();k.roundRect(-20,-22,40,44,4);k.fill();
+  k.fillStyle='rgba(255,255,255,.18)';k.fillRect(-16,-18,8,36);
+  k.fillStyle='#D8DDE4';k.beginPath();k.ellipse(0,-26,9,4,0,0,7);k.fill();
+  return c;
+}
+function brilho(k,x,y,r,a){const g=k.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(255,250,235,${a})`);g.addColorStop(.25,`rgba(255,240,210,${a*.35})`);g.addColorStop(1,'rgba(255,240,210,0)');k.fillStyle=g;k.beginPath();k.arc(x,y,r,0,7);k.fill();}
+function lua(k,p){
+  if(!SPRITE.lua)SPRITE.lua=renderLua(256);
+  const r=R*.062*(1+.08*p.z);k.drawImage(SPRITE.lua,p.x-r,p.y-r,r*2,r*2);
+}
+function reflexo(t,fase,per){return Math.pow(Math.max(0,Math.sin(t/per+fase)),28)}
+function estacao(k,p,t){
+  if(!SPRITE.iss)SPRITE.iss=renderISS();
+  const w=Math.max(40,R*.12)*(1+.12*p.z),h=w*.65;
+  k.save();k.translate(p.x,p.y);k.rotate(p.ang+Math.PI/2);k.scale(1,.62);
+  k.drawImage(SPRITE.iss,-w/2,-h/2,w,h);k.restore();
+  const f=MOV?reflexo(t,.8,1700):0;if(f>.02)brilho(k,p.x,p.y,w*.55,.85*f);
+}
+function satelite(k,p,t,i){
+  if(!SPRITE.sat)SPRITE.sat=renderSat();
+  const w=Math.max(16,R*.042)*(1+.12*p.z),h=w*.4;
+  k.save();k.translate(p.x,p.y);k.rotate(p.ang);k.scale(1,.7);k.drawImage(SPRITE.sat,-w/2,-h/2,w,h);k.restore();
+  const f=MOV?reflexo(t,i*2.1,1300+i*300):0;if(f>.02)brilho(k,p.x,p.y,w*.7,.8*f);
+}
+function desenharEspaco(t){
+  if(!capaVisivel||!CW)return;
+  cc.clearRect(0,0,CW,CH);fc.clearRect(0,0,CW,CH);
+  const bc=capa.getBoundingClientRect(), bg=cv.getBoundingClientRect();
+  const cx=bg.left-bc.left+bg.width/2, cy=bg.top-bc.top+bg.height/2, rot=proj.rotate();
+  if(esp.estrelas){
+    cc.drawImage(via,0,0,CW,CH);
+    for(const e of estrelas){
+      const x=((e.x+rot[0]*e.p*1.2)%CW+CW)%CW, y=((e.y-rot[1]*e.p*1.2)%CH+CH)%CH;
+      const a=MOV?e.a*(.7+.3*Math.sin(t/1000*e.v+e.f)):e.a;
+      cc.fillStyle=`rgba(${e.cor},${a})`;cc.fillRect(x-e.r/2,y-e.r/2,e.r,e.r);}
+    // satélite distante cruzando o céu de tempos em tempos
+    if(esp.satelites&&MOV){const ciclo=38000,k=(t%ciclo)/ciclo;if(k<.55){const q=k/.55;
+      cc.fillStyle=`rgba(230,236,245,${.55*Math.sin(Math.PI*q)})`;cc.fillRect(CW*(-.05+q*.7),CH*(.12+q*.1),1.3,1.3);}}
+  }
+  // atmosfera (antes cortada pelo canvas do globo)
+  const g=cc.createRadialGradient(cx,cy,R*.92,cx,cy,R*1.32);g.addColorStop(0,'rgba(91,143,217,.17)');g.addColorStop(1,'rgba(91,143,217,0)');
+  cc.fillStyle=g;cc.beginPath();cc.arc(cx,cy,R*1.32,0,7);cc.fill();
+  const objs=[];
+  if(esp.lua){// a órbita da Lua encolhe quando não cabe na tela
+    const L=ORB.lua, f=Math.max(.62,Math.min(1,((CW-cx)/R-.14)/L.a,((CH-cy)/R-.1)/L.b)), o={...L,a:L.a*f,b:L.b*f};
+    objs.push([posOrb(o,t,cx,cy),(k,p)=>lua(k,p)]);}
+  if(esp.iss){objs.push([posOrb(ORB.iss,t,cx,cy),(k,p)=>estacao(k,p,t)]);}
+  if(esp.satelites)ORB.sats.forEach((o,i)=>objs.push([posOrb(o,t,cx,cy),(k,p)=>satelite(k,p,t,i)]));
+  objs.sort((a,b)=>a[0].z-b[0].z);
+  for(const [p,f] of objs)f(p.z>0?fc:cc,p);
+}
+
+// menu do espaço
+const espBotao=document.getElementById('esp-botao'), espPainel=document.getElementById('esp-painel'), espTodos=document.getElementById('esp-todos');
+function syncEsp(){
+  espPainel.querySelectorAll('input[data-esp]').forEach(i=>{i.checked=esp[i.dataset.esp]});
+  const algum=ESP_ITENS.some(k=>esp[k]);espTodos.textContent=algum?'Deixar só o globo':'Mostrar tudo';
+  capa.classList.toggle('ceu-limpo',!esp.estrelas);
+}
+function abrirEsp(on){espPainel.hidden=!on;espBotao.setAttribute('aria-expanded',on);if(on)espPainel.querySelector('input').focus();}
+espBotao.addEventListener('click',()=>abrirEsp(espPainel.hidden));
+espPainel.addEventListener('change',e=>{const k=e.target.dataset.esp;if(k){esp[k]=e.target.checked;salvarEsp();syncEsp();}});
+espTodos.addEventListener('click',()=>{const v=!ESP_ITENS.some(k=>esp[k]);for(const k of ESP_ITENS)esp[k]=v;salvarEsp();syncEsp();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!espPainel.hidden){abrirEsp(false);espBotao.focus();}});
+document.addEventListener('pointerdown',e=>{if(!espPainel.hidden&&!e.target.closest('.esp-menu'))abrirEsp(false);});
+syncEsp();
 
 /* =================== gaveta =================== */
 const gav=document.getElementById('gaveta'), veu=document.getElementById('veu');

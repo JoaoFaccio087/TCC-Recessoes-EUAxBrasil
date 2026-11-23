@@ -52,6 +52,9 @@ body.com-gaveta #capa .texto{opacity:.15}
 /* céu da capa */
 #ceu,#frente{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #ceu{z-index:0} #frente{z-index:2}
+#capa.sobre-obj,#capa.sobre-obj #globo{cursor:grab}
+#capa.arrastando-obj,#capa.arrastando-obj *{cursor:grabbing!important;user-select:none}
+#esp-rotulo{position:absolute;left:0;top:0;z-index:4;pointer-events:none;font-size:13px;font-weight:500;color:var(--texto);background:rgba(7,13,24,.82);border:1px solid var(--linha2);border-radius:6px;padding:3px 9px;white-space:nowrap}
 .descer,.dica{z-index:3}
 .esp-menu{position:absolute;top:clamp(16px,3svh,28px);right:clamp(16px,3vw,40px);z-index:5}
 #esp-botao{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(14,24,40,.55);border:1px solid var(--linha2);color:var(--texto2);cursor:pointer;opacity:.6;transition:opacity .2s,background .2s,color .2s;backdrop-filter:blur(6px)}
@@ -227,6 +230,7 @@ footer b{color:var(--texto2);font-weight:500}
 <header id="capa">
   <canvas id="ceu" aria-hidden="true"></canvas>
   <canvas id="frente" aria-hidden="true"></canvas>
+  <div id="esp-rotulo" hidden></div>
   <div class="esp-menu">
     <button type="button" id="esp-botao" aria-expanded="false" aria-controls="esp-painel" aria-label="Detalhes do espaço" title="Detalhes do espaço">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-24 12 12)"/></svg>
@@ -238,7 +242,7 @@ footer b{color:var(--texto2);font-weight:500}
       <label class="chave"><span>Estação Espacial Internacional</span><input type="checkbox" data-esp="iss"></label>
       <label class="chave"><span>Satélites</span><input type="checkbox" data-esp="satelites"></label>
       <button type="button" id="esp-todos">Deixar só o globo</button>
-      <small>Elementos ilustrativos, fora de escala. A escolha fica salva neste navegador.</small>
+      <small>Elementos ilustrativos, fora de escala. Arraste a Lua, a Estação ou um satélite para movê-los na órbita. A escolha fica salva neste navegador.</small>
     </div>
   </div>
   <div class="texto">

@@ -77,6 +77,7 @@ O pico é `t_rel = 0`. A recessão de 1980 aparece apenas como antecedente dentr
 | D39 | 18/11 | **Publicação unificada:** a fonte única dos dados publicados é o branch `dados`. O `main` não versiona mais `dados/` (a cópia que entrou pelo PR #1 foi apagada; os arquivos seguem no branch `dados` e no histórico). O dashboard (`deshboard/alimentar_dashboard.py`) lê a edição do worktree do branch `dados` (`TCC_REPO_DADOS`). `scripts/publicar_tudo.ps1` publica, nesta ordem e parando no primeiro erro: branch `dados`, dashboard (commit e push do `main` se mudou, e novo merge no branch `dados`) e branch `pipeline` do repositório do João; no fim mostra o `id_edicao` de cada destino. Roda só à mão, depois de conferir a edição: não é chamado pelo `atualizar` nem pelo Agendador. O `publicar_dados.ps1` resolve os conflitos de `dados/` no merge do `main` com a cópia nova dos dados. |
 | D40 | 18/11 | **Juros do Brasil anualizados por dias úteis (substitui a parte da D28 sobre o Over/Selic):** a série passa a ser a taxa Over/Selic **acumulada no mês** (`BM12_TJOVER12`, % a.m., Ipeadata), convertida pela pipeline para % a.a. com (1 + m)^(252/du) − 1, em que du = dias de segunda a sexta do mês menos os feriados nacionais (fixos: 1/1, 21/4, 1/5, 7/9, 12/10, 2/11, 15/11, 25/12 e 20/11 desde 2024; móveis pela Páscoa: segunda e terça de Carnaval, Sexta-feira Santa e Corpus Christi). A `PAN12_TJOVER12` usada antes era (1 + m)^12 − 1 da mesma série e oscilava de 1 a 1,9 p.p. sem mudança da Selic, só pelo número de dias úteis do mês (pendência 1.5). De 1986-07 em diante a taxa mensal do Ipeadata bate com a capitalização das taxas diárias na base 252; a nota do Ipeadata não indica outra convenção para nenhum período, então a mesma regra vale para toda a série, e em 1981-1982 a base de 252 dias úteis é hipótese do trabalho (aviso na série). Coletas no Bronze com código diferente do atual (`PAN12_TJOVER12`) são ignoradas na Silver. A taxa dos Fed Funds (FRED) já é divulgada em % a.a. e não passa por conversão. |
 | D41 | 18/11 | **Repositório oficial e protótipo:** o código chega ao branch `pipeline` do repositório oficial (JoaoFaccio087/TCC-Recessoes-EUAxBrasil) por `git subtree` na pasta `pipeline/`, com o histórico do `main`; `pipeline/dados/` recebe a cópia do branch `dados` num commit separado. O `publicar_tudo.ps1` ganhou o passo 4: no branch `painel` do repositório oficial, `painel/prototipo/fonte/dados.py` lê a edição ativa do branch `dados` e `montar.py` regera `painel/prototipo/index.html` (commit e push no `painel`). As dependências npm do protótipo ficam fora do OneDrive (`TCC_PROTOTIPO_NODE`). Os scripts rodam dentro de `pipeline/` sem mudança: resolvem caminhos pela pasta do projeto, não pela raiz do repositório. |
+| D42 | 23/11 | **Hipóteses por indicador (origem: orientador, via João):** H2 e H3 avaliadas por indicador e maioria estrita dos indicadores comparáveis (mínimo 2), no lugar da mediana; PIB fora de H2 e H3; empate não conta a favor; indicador sem a medida num episódio sai da comparação. Inflação fora da H1, pelo mesmo motivo dos juros. Indicadores de H2 e H3: produção industrial, desemprego e exportações totais, com a série brasileira de cada episódio resolvida pela ponte (`pares.yaml`); cada episódio é medido a partir do próprio pico. Resolve a questão em aberto das unidades misturadas (seção 11). |
 
 ### Impacto das decisões D13 a D27 (regra da seção 12)
 
@@ -88,7 +89,7 @@ O pico é `t_rel = 0`. A recessão de 1980 aparece apenas como antecedente dentr
 | D16 `edicoes.json` | `publicacao.py` | seletor de edição | não muda (4.7 já promete) |
 | D17 CSV | não muda | consulta de exportação | não muda (4.7 já promete) |
 | D18, D23 Registro | `publicacao.py`, `__main__.py` | tela de manutenção | não muda (RF13) |
-| D19 Ponte | `gold.py`, `pares.yaml` | ficha do par | conferir Figura 3 |
+| D19 Ponte | `gold.py`, `pares.yaml` | ficha do par | conferir Figuras 3 e 4 |
 | D20 Leitura no navegador | não muda | não muda | feito (5.3) |
 | D21 `para_mensal` | `silver.py` + teste | não muda | não muda (RF03) |
 | D24 Nova tentativa | `conectores/` | não muda | não muda (4.3 e Quadro 4 já prometem) |
@@ -109,6 +110,7 @@ O pico é `t_rel = 0`. A recessão de 1980 aparece apenas como antecedente dentr
 | D39 Publicação unificada | `publicar_dados.ps1`, `publicar_tudo.ps1`, `.env.example` (`TCC_REPO_DADOS`) | dashboard lê do branch `dados`; o painel Vue não muda (continua em `TCC_DADOS`) | não muda |
 | D40 Juros por dias úteis | `series.yaml` (`br_juros`: `BM12_TJOVER12`, `anualizar_dias_uteis`), `tratamentos.py` (`dias_uteis`, `anualizar_dias_uteis`), `silver.py` (coleta de código antigo ignorada), testes | ficha dos juros: nova unidade, código e aviso; medidas dos juros mudam | seção 7.3 atualizada pelo grupo (opção B), com a correção sobre os Fed Funds |
 | D41 Subtree e protótipo | `publicar_tudo.ps1` (passos 3 e 4), `.env.example` (`TCC_PROTOTIPO_NODE`) | protótipo do repositório oficial passa a ser regerado a cada publicação; o contrato v1 não muda | não muda |
+| D42 Hipóteses por indicador | `regras.yaml` (`h1_pares`, `h2_h3_grupos`, `h2_h3_minimo_grupos`), `hipoteses.py`, `config.py` (checagem dos grupos), teste `test_hipoteses.py` | detalhe das hipóteses: `resultado_hipotese.detalhe` passa a trazer as condições e os indicadores de H2 e H3 (tela Hipóteses do `painel/` atualizada); o contrato v1 não muda | seção 7.5 |
 
 ### 2.1 Simplificações desta revisão [DECIDIDO, frente de engenharia]
 
@@ -394,15 +396,17 @@ Regra de teste: reação com 2 meses seguidos ≤ 98; recuperação com 2 meses 
 | Recuperação (do pico) | 4 | 5 |
 | Defasagem | +1 | |
 
-### 7.6 Hipóteses [DECIDIDO, D25, texto 7.5]
+### 7.6 Hipóteses [DECIDIDO, D25, D42, texto 7.5]
 
-Resultado de cada uma: **sustentada**, **não sustentada** ou **inconclusiva**. Usa medianas porque o número de casos por episódio é pequeno e a mediana é menos sensível a valores extremos que a média.
+Resultado de cada uma: **sustentada**, **não sustentada** ou **inconclusiva**. A H1 usa a mediana das defasagens, menos sensível a valores extremos que a média. A H2 e a H3 comparam os episódios **indicador a indicador** (D42): cada episódio é medido a partir do próprio pico, e nenhuma medida junta unidades diferentes (o desemprego é medido em p.p. em relação ao pico; os índices, em % do pico).
 
 | Hipótese | Séries | Critério |
 |---|---|---|
-| H1. A defasagem diminuiu ao longo dos episódios | Pares com reação válida nos três episódios: produção, desemprego, inflação, ações e exportações totais × `eua_prod_ind` (D8). Ficam fora o câmbio (sem par), o PIB e as exportações para os EUA (sem 1981-1982) e os juros, porque em 1981-1982 a taxa nominal brasileira acompanha a inflação da época | Sustentada se a mediana de \|defasagem\| cair estritamente de 1981-1982 para 2007-2009 e de 2007-2009 para 2020. Inconclusiva com menos de 3 pares elegíveis. |
-| H2. 2020 teve a queda mais intensa e a recuperação mais rápida | Séries brasileiras de atividade **disponíveis em cada episódio**: produção, desemprego, PIB e exportações | Sustentada se 2020 tiver ao mesmo tempo a maior mediana de \|amplitude\| e a menor mediana de tempo de recuperação entre os três episódios. |
-| H3. 1981-1982 teve efeitos mais prolongados | Mesmas séries de H2 | Sustentada se 1981-1982 tiver a maior mediana de tempo de recuperação. `RECUPERACAO_NAO_OBSERVADA` conta como o fim da janela (60 meses), o que subestima a duração real e torna o critério conservador. |
+| H1. A defasagem diminuiu ao longo dos episódios | Pares com reação válida nos três episódios: produção, desemprego, ações e exportações totais × `eua_prod_ind` (D8). Ficam fora o câmbio (sem par), o PIB e as exportações para os EUA (sem 1981-1982) e os juros e a inflação, porque em 1981-1982 as taxas nominais brasileiras acompanham a inflação alta da época (D25, D42) | Sustentada se a mediana de \|defasagem\| cair estritamente de 1981-1982 para 2007-2009 e de 2007-2009 para 2020. Inconclusiva com menos de 3 pares elegíveis. |
+| H2. 2020 teve a queda mais intensa e a recuperação mais rápida | Indicadores brasileiros de atividade: **produção industrial, desemprego e exportações totais**; a série de cada episódio vem da ponte (ex.: PME antiga, PME nova e PNAD Contínua no desemprego). O PIB fica fora (sem série trimestral em 1981-1982) | Duas condições: 2020 com a maior intensidade (\|amplitude\|) e 2020 com o menor tempo de recuperação. Em cada uma, um indicador é **favorável** se 2020 vencer sozinho; empate é comparável, mas não conta a favor; indicador sem a medida em algum episódio (`SEM_DADOS`, `COBERTURA_INSUFICIENTE`, `NAO_APLICAVEL`) sai da comparação daquela medida. Condição **atendida** com maioria estrita dos indicadores comparáveis; **inconclusiva** com menos de 2 comparáveis. Não sustentada se alguma condição não for atendida; senão, inconclusiva se alguma for inconclusiva; senão, sustentada. |
+| H3. 1981-1982 teve efeitos mais prolongados | Mesmos indicadores de H2 | Uma condição, com a mesma regra: 1981-1982 com o maior tempo de recuperação. `RECUPERACAO_NAO_OBSERVADA` conta como o fim da janela (60 meses), o que subestima a duração real e torna o critério conservador; dois episódios sem recuperação empatam. |
+
+O `resultado_hipotese.detalhe` traz, para H2 e H3, cada condição com os indicadores, as séries usadas em cada episódio, os valores, o vencedor, o empate e o motivo de exclusão, para conferir o resultado à mão; para H1, os pares considerados e os elegíveis.
 
 **Limitações (texto 7.5):** em 2020 o choque foi global e simultâneo, então a defasagem baixa não indica, por si só, maior integração financeira. Com três episódios, os critérios apontam diferenças e associações temporais, e não relações de causa e efeito.
 
@@ -423,7 +427,7 @@ Os estados cobrem os motivos que o painel informa pelo RF12 (texto 7.4): ausênc
 
 ## 8. Contrato de saída v1 [DECIDIDO, D2]
 
-Cada edição publica estes arquivos em `publicacao/edicoes/<id_edicao>/`. São as próprias tabelas da Gold (o modelo da Figura 3). Nomes de colunas em `snake_case`. Datas como `DATE` (primeiro dia do mês ou do trimestre). **Nome decidido para o tempo relativo: `t_rel`** (meses ou trimestres, conforme `frequencia`).
+Cada edição publica estes arquivos em `publicacao/edicoes/<id_edicao>/`. São as próprias tabelas da Gold (o modelo das Figuras 3 e 4). Nomes de colunas em `snake_case`. Datas como `DATE` (primeiro dia do mês ou do trimestre). **Nome decidido para o tempo relativo: `t_rel`** (meses ou trimestres, conforme `frequencia`).
 
 ### 8.1 Dimensões
 
@@ -529,7 +533,7 @@ A exportação CSV usa a mesma consulta da tela, com a identificação da fonte,
 ### 10.1 Próximas entregas
 
 1. ~~**Conferir a cobertura**~~ feito em 17/11 (D28). Resultado em `config/series.yaml` → João confirma a coluna "episódios com dados no Brasil" do Quadro 6.
-2. **Conferir a Figura 3** contra a seção 8 → João.
+2. **Conferir as Figuras 3 e 4** contra a seção 8 → João.
 3. **Contrato v1** (seção 8) → Gabriel e Arthur.
 
 ### 10.2 Em seguida (TCC I)
@@ -554,13 +558,13 @@ A exportação CSV usa a mesma consulta da tela, com a identificação da fonte,
 |---|---|
 | Itens [CONFERIR] da seção 4.1: **concluídos em 17/11 (D28)**. Repassar ao João para confirmar o Quadro 6 (cobertura: PME antiga começa em 1980-01; IPCA em 1979-12) | Lucas → João |
 | Edição sintética no contrato v1 para os protótipos: **feita** (`gerar-exemplo`) | Lucas → Gabriel e Arthur |
-| Figuras 1 e 2: **conferidas em 17/11**, batem com a implementação (sem SGS). **Figura 3 desatualizada**: faltam `coletado_em` nas alinhadas (RNF01), `inicio_disponivel`, `fim_disponivel` e `aviso_metodologia` na `dim_serie` (RF11), `motivo` nas alinhadas, `data_ref` e `valor_tratado` nas alinhadas, `status_reacao`, `duracao_queda`, `valor_pico` e `cobertura` no resumo, `frequencia`, `unidade_defasagem` e `motivo` na comparação, `fonte` e `data_consulta` na `dim_episodio`. Completar ou dizer na legenda que a figura mostra os campos principais | João |
+| Figuras 1 e 2: **conferidas em 17/11**, batem com a implementação (sem SGS). **Figuras 3 e 4 (modelo dimensional) desatualizadas**: faltam `coletado_em` nas alinhadas (RNF01), `inicio_disponivel`, `fim_disponivel` e `aviso_metodologia` na `dim_serie` (RF11), `motivo` nas alinhadas, `data_ref` e `valor_tratado` nas alinhadas, `status_reacao`, `duracao_queda`, `valor_pico` e `cobertura` no resumo, `frequencia`, `unidade_defasagem` e `motivo` na comparação, `fonte` e `data_consulta` na `dim_episodio`. Completar ou dizer nas legendas que as figuras mostram os campos principais | João |
 | Painel de referência em `painel/` (D34): Gabriel e Arthur revisam o visual e a navegação e evoluem a partir dele | Gabriel e Arthur |
 | Correções no texto oficial apontadas na leitura de 17/11: 2.2.3 trata o SGS como fonte (contradiz D13); 2.1.3 promete no painel participação de EUA e China nas exportações, commodities e fluxos de capital (fora do mapa); 2.1.2 cita endividamento externo (fora do mapa, Q3); 2.1.6 cita saldo comercial (não existe no mapa); 2.1.5 lista "país" e "fonte" como dimensões (são colunas da `dim_serie`) | João |
 | **Questão em aberto (H1, método):** a reação só é buscada depois do pico (t > 0). Em 1981-1982 a produção industrial brasileira já tinha caído cerca de 15% entre out/1980 e jul/1981, antes do pico dos EUA, e a pipeline registra reação em t = 18 e defasagem de +14 meses ("Brasil reagiu depois"). Isso favorece H1 justamente no episódio que dá o ponto de partida. Opções: registrar como limitação no 7.5; marcar "reação anterior ao pico" quando a série já estiver além do limiar em t = 0; ou buscar a reação também antes do pico. Decidir pelo método, não pelo resultado | Grupo |
 | Aplicar o SUS (roteiro e questionário em `avaliacao/`) e definir o número de participantes | Grupo e Prof. Germano |
 | Datas das etapas do TCC II | Grupo e Prof. Germano |
-| **Questão em aberto (texto 7.5 e seção 7.6 deste arquivo):** as medianas de H2 e H3 juntam unidades diferentes (amplitude em % para índices e em p.p. para o desemprego; tempo de recuperação em trimestres para o PIB e em meses para as demais). Também falta dizer se "exportações" em H2 e H3 são as totais, as para os EUA ou ambas. Qualquer ajuste muda o texto e este arquivo juntos. | Grupo |
+| ~~**Questão em aberto (texto 7.5 e seção 7.6 deste arquivo):** as medianas de H2 e H3 juntam unidades diferentes (amplitude em % para índices e em p.p. para o desemprego; tempo de recuperação em trimestres para o PIB e em meses para as demais). Também falta dizer se "exportações" em H2 e H3 são as totais, as para os EUA ou ambas. Qualquer ajuste muda o texto e este arquivo juntos.~~ **Resolvida em 23/11 (D42):** comparação por indicador e maioria estrita, sem PIB; exportações = totais. Falta levar a regra à seção 7.5 do texto | Grupo |
 
 **Concluídos no texto oficial:** SGS retirado (RF01, 4.2, Figura 1); IBGE/SIDRA como fonte (RF01, 4.2, Quadro 6); ALFRED como trabalho futuro (4.6); agendamento semanal e fontes mensais (4.3, 5.2 e 6.3); leitura da edição inteira no navegador (5.3); seis tabelas fato e ponte com `id_par` e `id_episodio` (4.5); parâmetros e critérios do capítulo 7 (D25).
 

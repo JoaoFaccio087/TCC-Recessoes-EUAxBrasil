@@ -800,7 +800,7 @@ function textoManchete(p,e,d){
   else s=`${crise}, os EUA não chegaram a reagir ${em}, e por isso não há defasagem`;
   if(rb&&rb.amplitude!=null&&p.tipo==='nivel'&&rb.amplitude<0)s+=`; no pior momento, a queda brasileira foi de <b>${fmt(Math.abs(rb.amplitude))}%</b>`;
   else if(rb&&rb.amplitude!=null&&p.tipo==='taxa')s+=`; no pior momento, a variação brasileira foi de <b>${sinal(rb.amplitude)} p.p.</b>`;
-  return s+'.';
+  return s+(s.endsWith('.</b>')?'':'.');
 }
 const graf=document.getElementById('graf'), dica=document.getElementById('dica');
 function escalaY(p,eps){const vals=[];eps.forEach(e=>{const d=p.eps[e];[d.pts_eua,d.pts_br].forEach(a=>a.forEach(q=>{if(q[1]!=null)vals.push(q[1])}))});
@@ -943,7 +943,7 @@ function desenharMedidas(){
   // defasagem
   const n1=m1.querySelector('.n');
   if(p.sem_par){antigo.d=null;n1.textContent='sem par';m1.querySelector('.u').textContent='';}
-  else if(d.defasagem!=null){contar(n1,'d',d.defasagem,v=>{v=Math.round(v);return v===0?'0':(v>0?'+':'−')+Math.abs(v)});m1.querySelector('.u').textContent=d.defasagem!==0?(p.tri?' trim.':' meses'):'';}
+  else if(d.defasagem!=null){contar(n1,'d',d.defasagem,v=>{v=Math.round(v);return v===0?'0':(v>0?'+':'−')+Math.abs(v)});m1.querySelector('.u').textContent=d.defasagem!==0?(p.tri?' trim.':(Math.abs(d.defasagem)===1?' mês':' meses')):'';}
   else{antigo.d=null;n1.textContent='—';m1.querySelector('.u').textContent='';}
   m1.querySelector('.cmp').innerHTML=`<div class="comp">${defc}</div>`;
   // pior momento

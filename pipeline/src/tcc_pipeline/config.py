@@ -189,6 +189,11 @@ def checar(cfg: Config) -> None:
                 erros.append(f"par {id_par}/{id_ep}: {id_br} não cobre o episódio")
             elif cfg.series[id_br]["frequencia"] != cfg.series[p["eua"]]["frequencia"]:
                 erros.append(f"par {id_par}/{id_ep}: frequências diferentes")
+    hip = cfg.regras.get("hipoteses", {})
+    for chave in ("h1_pares", "h2_h3_grupos"):
+        for id_par in hip.get(chave, []):
+            if id_par not in cfg.pares:
+                erros.append(f"hipoteses.{chave}: {id_par!r} não é um par de pares.yaml")
     for id_s in cfg.sem_par:
         if id_s not in cfg.series:
             erros.append(f"sem_par: série {id_s!r} inexistente")

@@ -98,7 +98,7 @@ O Excel não abre Parquet. Use o botão **Exportar CSV** do painel (`cd painel` 
 | `fato_serie_alinhada_mensal` | série × recessão × mês relativo ao pico | **Gráficos alinhados ao pico** e comparação entre recessões |
 | `fato_serie_alinhada_trimestral` | série × recessão × trimestre relativo | O mesmo, para o PIB |
 | `fato_valor_mensal` / `_trimestral` | série × data | Valores no calendário (original e tratado) |
-| `resultado_hipotese` | hipótese | Resultado de H1 a H3 e as medianas usadas |
+| `resultado_hipotese` | hipótese | Resultado de H1 a H3 e o detalhe para conferir (medianas da H1; comparação por indicador em H2 e H3) |
 | `dim_serie` | série | Nome, país, grupo, fonte, código, unidade, frequência, avisos |
 | `dim_episodio` | recessão | Pico e vale (mensal e trimestral), segundo o NBER |
 | `ponte_serie_br_eua` | par × recessão | Qual série do Brasil se compara com qual dos EUA em cada recessão |
@@ -136,7 +136,7 @@ Para comparar recessões ou países, use **`valor_painel`**.
 | `nivel` | produção industrial, PIB, exportações, ações, câmbio real | número-índice, pico = 100 | em **%** |
 | `taxa` | desemprego, juros, inflação | diferença em **pontos percentuais** em relação ao pico | em **p.p.** |
 
-A coluna `unidade_amplitude` diz qual unidade vale em cada linha. **Não tire média nem mediana misturando % e p.p.** sem dizer isso no texto (é uma questão em aberto; veja o `PENDENCIAS.md`, item 1.3).
+A coluna `unidade_amplitude` diz qual unidade vale em cada linha. **Não tire média nem mediana misturando % e p.p.** Por isso H2 e H3 comparam os episódios indicador a indicador, e cada episódio é medido a partir do próprio pico (D42).
 
 ### 4.4 As medidas (seção 7.3 do engenharia_de_dados.md)
 
@@ -243,27 +243,35 @@ PIVOT (
 """).df()
 ```
 
-### 5.5 Medianas de H2 e H3 (reproduz o resultado oficial)
+### 5.5 Comparação de H2 e H3 por indicador (reproduz o resultado oficial)
 
-O critério oficial exclui `br_export_eua` e conta "não recuperou" como o fim da janela (60 meses, ou 20 trimestres no PIB).
+Regra da D42 (seção 7.6 do `engenharia_de_dados.md`): em cada indicador (produção industrial, desemprego e exportações totais), a série brasileira de cada episódio vem da ponte, e cada episódio é medido a partir do próprio pico. "Não recuperou" conta como o fim da janela (60 meses). A condição é atendida se o episódio esperado vencer sozinho na maioria estrita dos indicadores comparáveis (mínimo 2); empate não conta a favor.
 
 ```python
 con.sql("""
-SELECT r.id_episodio,
-       MEDIAN(ABS(r.amplitude)) AS mediana_variacao,
-       MEDIAN(CASE WHEN r.status_recuperacao = 'RECUPERACAO_NAO_OBSERVADA'
-                   THEN CASE r.frequencia WHEN 'T' THEN 20 ELSE 60 END
-                   ELSE r.t_recuperacao END) AS mediana_recuperacao,
-       COUNT(*) AS series
-FROM fato_resumo_episodio r JOIN dim_serie s USING (id_serie)
-WHERE s.pais = 'BR'
-  AND s.grupo IN ('producao_industrial', 'desemprego', 'pib', 'exportacoes')
-  AND s.id_serie <> 'br_export_eua'
-GROUP BY 1 ORDER BY 1
+PIVOT (
+  SELECT p.id_par AS indicador, p.id_episodio,
+         ROUND(ABS(r.amplitude), 1) AS intensidade,
+         CASE r.status_recuperacao WHEN 'OK' THEN r.t_recuperacao
+              WHEN 'RECUPERACAO_NAO_OBSERVADA' THEN 60 END AS recuperacao
+  FROM ponte_serie_br_eua p
+  LEFT JOIN fato_resumo_episodio r
+         ON r.id_serie = p.id_serie_br AND r.id_episodio = p.id_episodio
+  WHERE p.id_par IN ('producao_industrial', 'desemprego', 'exportacoes_total')
+) ON id_episodio USING first(intensidade) AS int, first(recuperacao) AS rec
+ORDER BY indicador
 """).df()
 ```
 
-Resultado esperado na edição `20261117-2317`: variação 8,4 / 7,8 / 11,7 e recuperação 33 / 15 / 8,5 meses (1981-1982, 2007-2009, 2020). É o mesmo que está em `resultado_hipotese`.
+Resultado esperado na edição `20261123-2037` (intensidade em % do pico, ou p.p. no desemprego; recuperação em meses):
+
+| Indicador | 1981-1982 | 2007-2009 | 2020 |
+|---|---|---|---|
+| Produção industrial | 8,4 · 33 | 15,2 · 24 | **26,0 · 7** |
+| Desemprego | 0,7 · 7 | 0,0 · **1** | **3,6** · 23 |
+| Exportações totais | **26,1 · 34** | 23,0 · 27 | 12,4 · **10** |
+
+Intensidade: 2020 vence em 2 de 3 indicadores. Recuperação mais rápida: 2020 em 2 de 3. Recuperação mais lenta: 1981-1982 em 2 de 3. É o mesmo que está em `resultado_hipotese` (H2 e H3 sustentadas).
 
 ### 5.6 Resultado das hipóteses
 
@@ -271,7 +279,7 @@ Resultado esperado na edição `20261117-2317`: variação 8,4 / 7,8 / 11,7 e re
 con.sql("SELECT hipotese, resultado, n_pares, detalhe FROM resultado_hipotese ORDER BY hipotese").df()
 ```
 
-`detalhe` é um JSON com as medianas e os pares usados (`json.loads` no Python).
+`detalhe` é um JSON (`json.loads` no Python). Na H1: pares considerados, pares elegíveis e medianas. Na H2 e na H3: as condições, cada uma com os indicadores, as séries usadas em cada episódio, os valores, o vencedor, o empate e o motivo de exclusão.
 
 ### 5.7 Valores no calendário (original × tratado, com data de coleta)
 

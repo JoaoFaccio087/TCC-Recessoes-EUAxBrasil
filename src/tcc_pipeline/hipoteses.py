@@ -2,26 +2,35 @@
 
 Entradas: os DataFrames de ``fato_resumo_episodio`` e ``fato_comparacao`` (colunas do
 contrato), mais a configuração. Saída: linhas de ``resultado_hipotese``.
+
+H1: mediana das defasagens nos pares de ``h1_pares`` com reação nos três episódios.
+
+H2 e H3 (D42): comparação por indicador. Em cada grupo de ``h2_h3_grupos``, a série
+brasileira de cada episódio vem da ponte (``pares.yaml``); cada episódio é medido a partir do
+próprio pico. Um grupo é favorável quando o episódio esperado vence sozinho; empate não conta
+a favor; sem a medida num episódio, o grupo sai da comparação daquela medida. A condição é
+atendida com maioria estrita dos grupos comparáveis (mínimo ``h2_h3_minimo_grupos``).
 """
 
 from __future__ import annotations
 
 import json
+import math
 
 import pandas as pd
 
-from .metricas import OK, RECUPERACAO_NAO_OBSERVADA
+from .metricas import OK, RECUPERACAO_NAO_OBSERVADA, SEM_DADOS
 
 SUSTENTADA = "sustentada"
 NAO_SUSTENTADA = "não sustentada"
 INCONCLUSIVA = "inconclusiva"
 
-EPISODIOS = ["1981-1982", "2007-2009", "2020"]
+ATENDIDA = "atendida"
+NAO_ATENDIDA = "não atendida"
+INCONCLUSIVA_COND = "inconclusiva"
 
-NOTA_UNIDADES = (
-    "Questão em aberto: as medianas juntam unidades diferentes (amplitude em % e em p.p.; "
-    "recuperação em meses e, no PIB, em trimestres)."
-)
+EPISODIOS = ["1981-1982", "2007-2009", "2020"]
+CRITERIO_H2_H3 = "maioria estrita dos grupos comparaveis, minimo {}"
 
 
 def _linha(h: str, resultado: str, n: int, detalhe: dict) -> dict:
@@ -29,13 +38,14 @@ def _linha(h: str, resultado: str, n: int, detalhe: dict) -> dict:
             "detalhe": json.dumps(detalhe, ensure_ascii=False)}
 
 
+# ------------------------------------------------------------------------------------- H1
 def h1(comparacao: pd.DataFrame, cfg) -> dict:
     regras = cfg.regras["hipoteses"]
-    pares = regras["h1_pares"]
+    pares = list(regras["h1_pares"])
     ok = comparacao[(comparacao["id_par"].isin(pares)) & (comparacao["status"] == OK)]
     por_par = ok.groupby("id_par")["id_episodio"].nunique()
     elegiveis = sorted(por_par[por_par == len(EPISODIOS)].index)
-    det = {"pares_elegiveis": elegiveis}
+    det = {"pares_usados": pares, "pares_elegiveis": elegiveis}
     if len(elegiveis) < regras["h1_minimo_pares"]:
         return _linha("H1", INCONCLUSIVA, len(elegiveis), det)
     sel = ok[ok["id_par"].isin(elegiveis)]
@@ -45,54 +55,117 @@ def h1(comparacao: pd.DataFrame, cfg) -> dict:
     return _linha("H1", SUSTENTADA if caiu else NAO_SUSTENTADA, len(elegiveis), det)
 
 
-def _series_atividade(resumo: pd.DataFrame, cfg) -> pd.DataFrame:
-    regras = cfg.regras["hipoteses"]
-    ids = [s for s, m in cfg.series.items()
-           if m["pais"] == "BR" and m.get("grupo") in regras["h2_h3_grupos"]
-           and not m.get("apenas_ficha") and s not in regras["h2_h3_excluir_series"]]
-    return resumo[resumo["id_serie"].isin(ids)].copy()
+# --------------------------------------------------------------------------------- H2 e H3
+def _intensidade(r) -> tuple[float | None, str | None]:
+    """abs(amplitude); sem amplitude, o motivo é o status da linha (ou 'nulo')."""
+    if r["amplitude"] is None or pd.isna(r["amplitude"]):
+        st = r["status_recuperacao"]
+        return None, st if isinstance(st, str) and st not in (OK, RECUPERACAO_NAO_OBSERVADA) else "nulo"
+    return abs(float(r["amplitude"])), None
 
 
-def _tempo_recuperacao(df: pd.DataFrame, cfg) -> pd.Series:
-    """Tempo de recuperação; RECUPERACAO_NAO_OBSERVADA conta como o fim da janela."""
-    fim = df["frequencia"].map(
-        lambda f: cfg.regras["janelas"]["T" if f == "T" else "M"]["busca_recuperacao_max"])
-    t = df["t_recuperacao"].astype("float64")
-    return t.where(df["status_recuperacao"] == OK,
-                   fim.where(df["status_recuperacao"] == RECUPERACAO_NAO_OBSERVADA))
+def _recuperacao(cfg):
+    def medir(r) -> tuple[float | None, str | None]:
+        """t_recuperacao; RECUPERACAO_NAO_OBSERVADA conta como o fim da janela (60 meses)."""
+        st = r["status_recuperacao"]
+        if st == OK and not pd.isna(r["t_recuperacao"]):
+            return float(r["t_recuperacao"]), None
+        if st == RECUPERACAO_NAO_OBSERVADA:
+            f = "T" if r["frequencia"] == "T" else "M"
+            return float(cfg.regras["janelas"][f]["busca_recuperacao_max"]), None
+        return None, st if isinstance(st, str) and st != OK else "nulo"
+    return medir
 
 
-def _medianas(resumo: pd.DataFrame, cfg) -> tuple[dict, dict, int]:
-    df = _series_atividade(resumo, cfg)
-    df["t_rec"] = _tempo_recuperacao(df, cfg)
-    amp, rec = {}, {}
+def _num(v: float) -> float | int:
+    return int(v) if float(v).is_integer() else v
+
+
+def _comparar_grupo(grupo: str, resumo: pd.DataFrame, cfg, medir, maior_vence: bool,
+                    esperado: str) -> tuple[dict, bool, bool]:
+    """Um grupo numa medida. Devolve (detalhe, comparável, favorável)."""
+    if grupo not in cfg.pares:  # fora do recorte de séries desta execução
+        return ({"grupo": grupo, "series": {}, "valores": {}, "vencedor": None, "empate": False,
+                 "excluido_motivo": "grupo fora do recorte"}, False, False)
+    series = dict(cfg.pares[grupo]["br"])
+    valores: dict[str, float | None] = {}
+    motivos: list[str] = []
     for e in EPISODIOS:
-        d = df[df["id_episodio"] == e]
-        a = d["amplitude"].dropna().abs()
-        r = d["t_rec"].dropna()
-        amp[e] = float(a.median()) if not a.empty else None
-        rec[e] = float(r.median()) if not r.empty else None
-    return amp, rec, int(df["id_serie"].nunique())
+        id_s = series.get(e, SEM_DADOS)
+        linha = resumo[(resumo["id_serie"] == id_s) & (resumo["id_episodio"] == e)]
+        if id_s == SEM_DADOS or linha.empty:
+            valores[e], motivo = None, SEM_DADOS
+        else:
+            valores[e], motivo = medir(linha.iloc[0])
+        if motivo:
+            motivos.append(f"{e}: {motivo}")
+    det = {"grupo": grupo, "series": series,
+           "valores": {e: (None if v is None else _num(v)) for e, v in valores.items()},
+           "vencedor": None, "empate": False, "excluido_motivo": None}
+    if motivos:
+        det["excluido_motivo"] = "; ".join(motivos)
+        return det, False, False
+    alvo = max(valores.values()) if maior_vence else min(valores.values())
+    vencedores = [e for e, v in valores.items() if math.isclose(v, alvo, rel_tol=0, abs_tol=1e-9)]
+    if len(vencedores) > 1:
+        det["empate"] = True
+        det["vencedor"] = vencedores
+        return det, True, False
+    det["vencedor"] = vencedores[0]
+    return det, True, vencedores[0] == esperado
+
+
+def _condicao(resumo: pd.DataFrame, cfg, medida: str, esperado: str, maior_vence: bool) -> dict:
+    regras = cfg.regras["hipoteses"]
+    medir = _intensidade if medida == "intensidade" else _recuperacao(cfg)
+    grupos, comparaveis, favoraveis = [], 0, 0
+    for g in regras["h2_h3_grupos"]:
+        det, comp, fav = _comparar_grupo(g, resumo, cfg, medir, maior_vence, esperado)
+        grupos.append(det)
+        comparaveis += comp
+        favoraveis += fav
+    if comparaveis < regras["h2_h3_minimo_grupos"]:
+        estado = INCONCLUSIVA_COND
+    elif favoraveis > comparaveis / 2:
+        estado = ATENDIDA
+    else:
+        estado = NAO_ATENDIDA
+    return {"medida": medida, "episodio_esperado": esperado,
+            "vence": "maior valor" if maior_vence else "menor valor",
+            "comparaveis": comparaveis, "favoraveis": favoraveis, "estado": estado,
+            "grupos": grupos}
+
+
+def _detalhe(cfg, condicoes: list[dict]) -> dict:
+    return {"criterio": CRITERIO_H2_H3.format(cfg.regras["hipoteses"]["h2_h3_minimo_grupos"]),
+            "condicoes": condicoes}
+
+
+def _n_grupos(condicoes: list[dict]) -> int:
+    """Grupos comparáveis em pelo menos uma condição."""
+    return len({g["grupo"] for c in condicoes for g in c["grupos"] if g["excluido_motivo"] is None})
+
+
+def combinar(estados: list[str]) -> str:
+    """Resultado a partir das condições: não atendida > inconclusiva > sustentada."""
+    if NAO_ATENDIDA in estados:
+        return NAO_SUSTENTADA
+    if INCONCLUSIVA_COND in estados:
+        return INCONCLUSIVA
+    return SUSTENTADA
 
 
 def h2(resumo: pd.DataFrame, cfg) -> dict:
-    amp, rec, n = _medianas(resumo, cfg)
-    det = {"mediana_abs_amplitude": amp, "mediana_recuperacao": rec, "nota": NOTA_UNIDADES}
-    if None in amp.values() or None in rec.values():
-        return _linha("H2", INCONCLUSIVA, n, det)
-    outros = [e for e in EPISODIOS if e != "2020"]
-    ok = all(amp["2020"] > amp[e] for e in outros) and all(rec["2020"] < rec[e] for e in outros)
-    return _linha("H2", SUSTENTADA if ok else NAO_SUSTENTADA, n, det)
+    conds = [_condicao(resumo, cfg, "intensidade", "2020", maior_vence=True),
+             _condicao(resumo, cfg, "recuperacao", "2020", maior_vence=False)]
+    return _linha("H2", combinar([c["estado"] for c in conds]), _n_grupos(conds),
+                  _detalhe(cfg, conds))
 
 
 def h3(resumo: pd.DataFrame, cfg) -> dict:
-    _, rec, n = _medianas(resumo, cfg)
-    det = {"mediana_recuperacao": rec,
-           "nota": NOTA_UNIDADES + " RECUPERACAO_NAO_OBSERVADA conta como o fim da janela."}
-    if None in rec.values():
-        return _linha("H3", INCONCLUSIVA, n, det)
-    ok = all(rec["1981-1982"] > rec[e] for e in EPISODIOS if e != "1981-1982")
-    return _linha("H3", SUSTENTADA if ok else NAO_SUSTENTADA, n, det)
+    conds = [_condicao(resumo, cfg, "recuperacao", "1981-1982", maior_vence=True)]
+    return _linha("H3", combinar([c["estado"] for c in conds]), _n_grupos(conds),
+                  _detalhe(cfg, conds))
 
 
 def avaliar(resumo: pd.DataFrame, comparacao: pd.DataFrame, cfg) -> pd.DataFrame:

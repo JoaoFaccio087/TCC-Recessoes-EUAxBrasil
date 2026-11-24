@@ -34,9 +34,11 @@ cobertura_minima: 0.90
 
 # Hipóteses (seção 7.6).
 hipoteses:
-  h1_pares: [producao_industrial, desemprego, inflacao, acoes, exportacoes_total]
+  # Inflação fora da H1 pelo mesmo motivo dos juros (D25, D42).
+  h1_pares: [producao_industrial, desemprego, acoes, exportacoes_total]
   h1_minimo_pares: 3
-  # [PROPOSTA] questão em aberto da seção 11: quais exportações entram em H2/H3.
-  # Por ora, só as totais (as únicas com os três episódios).
-  h2_h3_grupos: [producao_industrial, desemprego, pib, exportacoes]
-  h2_h3_excluir_series: [br_export_eua]
+  # H2 e H3 por indicador (D42): chaves de pares.yaml; a série brasileira de cada episódio vem
+  # da ponte. PIB fora (sem série trimestral em 1981-1982); só exportações totais (as únicas
+  # com os três episódios).
+  h2_h3_grupos: [producao_industrial, desemprego, exportacoes_total]
+  h2_h3_minimo_grupos: 2

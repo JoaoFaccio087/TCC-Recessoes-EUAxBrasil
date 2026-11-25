@@ -4,7 +4,7 @@
 #
 # O branch "dados" = código do main + pasta dados/ com uma cópia de <TCC_DADOS>
 # (Bronze, Silver, publicação com as edições, registros de execução e relatórios de
-# conferência). Ficam fora: a trava (.lock) e a edição sintética (exemplo/).
+# conferência). Ficam fora: a trava (.lock), a edição sintética (exemplo/) e bancos .duckdb.
 #
 # O branch é mantido num worktree fora do OneDrive (padrão: %USERPROFILE%\tcc-local\repo-dados).
 # A cada execução: atualiza o código com o main, espelha <TCC_DADOS> em dados/, faz commit
@@ -60,7 +60,8 @@ if ($LASTEXITCODE -ne 0) {
 
 # 3. Espelho dos dados (robocopy: códigos 0 a 7 são sucesso)
 $destino = Join-Path $Worktree 'dados'
-robocopy $dados $destino /MIR /XD exemplo /XF .lock /NFL /NDL /NJH /NJS /NP | Out-Null
+# Bancos .duckdb de consulta local ficam fora (podem estar abertos num cliente e travar a cópia).
+robocopy $dados $destino /MIR /XD exemplo /XF .lock *.duckdb *.duckdb.* /R:2 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy falhou (código $LASTEXITCODE)" }
 
 # 4. Commit e envio

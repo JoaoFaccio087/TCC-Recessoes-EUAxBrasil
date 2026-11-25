@@ -97,5 +97,27 @@
   "registros": 12804,
   "id_edicao": "20261118-2115",
   "observacao": ""
+ },
+ {
+  "id_execucao": "20261124T003724096752Z-47004",
+  "inicio": "2026-11-23T20:37",
+  "duracao_min": 0.0,
+  "tipo": "reprocessamento",
+  "status": "sucesso",
+  "series_processadas": 20,
+  "registros": 12804,
+  "id_edicao": "20261123-2037",
+  "observacao": "LOCK_ESQUECIDO_REMOVIDO {'pid': 13200, 'inicio': '2026-11-23T13:49:01.924234+00:00'}"
+ },
+ {
+  "id_execucao": "20261125T011011617666Z-48800",
+  "inicio": "2026-11-24T21:10",
+  "duracao_min": 0.1,
+  "tipo": "reprocessamento",
+  "status": "sucesso",
+  "series_processadas": 20,
+  "registros": 12804,
+  "id_edicao": "—",
+  "observacao": "conteúdo igual ao da edição ativa 20261123-2037"
  }
 ]

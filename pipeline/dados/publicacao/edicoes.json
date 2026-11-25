@@ -36,6 +36,12 @@
       "publicado_em": "2026-11-18T21:15:24-04:00",
       "data_corte": "2026-11-18",
       "manifesto": "edicoes/20261118-2115/manifesto.json"
+    },
+    {
+      "id_edicao": "20261123-2037",
+      "publicado_em": "2026-11-23T20:37:24-04:00",
+      "data_corte": "2026-11-23",
+      "manifesto": "edicoes/20261123-2037/manifesto.json"
     }
   ]
 }

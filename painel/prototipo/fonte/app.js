@@ -387,8 +387,8 @@ function textoManchete(p,e,d){
   if(d.defasagem!=null)s=d.defasagem===0?`${crise}, Brasil e EUA reagiram <b>no mesmo ${p.tri?'trimestre':'mês'}</b> ${em}`:`${crise}, o Brasil reagiu <b>${tempo(Math.abs(d.defasagem),p)} ${d.defasagem>0?'depois':'antes'}</b> dos EUA ${em}`;
   else if(rb&&rb.st_reacao!=='OK')s=`${crise}, o Brasil <b>não chegou a reagir</b> ${em}, pelo critério do estudo`;
   else s=`${crise}, os EUA não chegaram a reagir ${em}, e por isso não há defasagem`;
-  if(rb&&rb.amplitude!=null&&p.tipo==='nivel'&&rb.amplitude<0)s+=`; no pior momento, a queda brasileira foi de <b>${fmt(Math.abs(rb.amplitude))}%</b>`;
-  else if(rb&&rb.amplitude!=null&&p.tipo==='taxa')s+=`; no pior momento, a variação brasileira foi de <b>${sinal(rb.amplitude)} p.p.</b>`;
+  if(rb&&rb.amplitude!=null&&p.tipo==='nivel'&&rb.amplitude<0)s+=`; no pior valor, a queda brasileira foi de <b>${fmt(Math.abs(rb.amplitude))}%</b>`;
+  else if(rb&&rb.amplitude!=null&&p.tipo==='taxa')s+=`; no pior valor, a variação brasileira foi de <b>${sinal(rb.amplitude)} p.p.</b>`;
   return s+(s.endsWith('.</b>')?'':'.');
 }
 const graf=document.getElementById('graf'), dica=document.getElementById('dica');
@@ -498,7 +498,7 @@ function desenharPrincipal(animar=true){
   const rb=d.res_br, ab=d.pts_br;
   if(rb&&rb.extremo!=null&&rb.amplitude!=null){const t=xT(rb.extremo,p),v=val(ab,t);if(v!=null){
     n.append('circle').attr('cx',x(t)).attr('cy',y(v)).attr('r',6).attr('fill',COR.br).attr('stroke','#0E1828').attr('stroke-width',2);
-    const cabe=y(v)+26<H-m.b-18;n.append('text').attr('x',x(t)).attr('y',cabe?y(v)+24:y(v)-14).attr('text-anchor','middle').attr('paint-order','stroke').attr('stroke','#0E1828').attr('stroke-width',5).attr('fill','#EAF0F7').attr('font-size',12.5).text(`pior momento: ${sinal(rb.amplitude)}${unid(p)}`);}}
+    const cabe=y(v)+26<H-m.b-18;n.append('text').attr('x',x(t)).attr('y',cabe?y(v)+24:y(v)-14).attr('text-anchor','middle').attr('paint-order','stroke').attr('stroke','#0E1828').attr('stroke-width',5).attr('fill','#EAF0F7').attr('font-size',12.5).text(`pior valor: ${sinal(rb.amplitude)}${unid(p)}`);}}
   if(rb&&rb.recup!=null){const t=xT(rb.recup,p);if(t<=48){const v=val(ab,t);if(v!=null)
     n.append('rect').attr('x',x(t)-5).attr('y',y(v)-5).attr('width',10).attr('height',10).attr('transform',`rotate(45 ${x(t)} ${y(v)})`).attr('fill',COR.br).attr('stroke','#0E1828').attr('stroke-width',2);}}
   if(!series.br&&!p.sem_par)n.append('text').attr('x',(m.l+Wg-m.r)/2+60).attr('y',y(ref)+40).attr('text-anchor','middle').attr('fill','#A9B6C8').attr('font-size',14).text('Brasil: sem série para este período');
@@ -527,7 +527,7 @@ function desenharMedidas(){
   if(!el.dataset.pronto){el.dataset.pronto=1;el.innerHTML=[1,2,3].map(i=>`<div class="medida"><h4></h4><div class="valor num"><span class="n"></span><span class="u" style="font-size:.45em;color:var(--texto2)"></span></div><div class="cmp"></div></div>`).join('');}
   const [m1,m2,m3]=el.querySelectorAll('.medida');
   m1.querySelector('h4').textContent='Defasagem da reação';
-  m2.querySelector('h4').textContent='Pior momento, em relação ao pico';
+  m2.querySelector('h4').textContent='Pior valor, em relação ao pico';
   m3.querySelector('h4').textContent='Volta ao nível do pico';
   // defasagem
   const n1=m1.querySelector('.n');

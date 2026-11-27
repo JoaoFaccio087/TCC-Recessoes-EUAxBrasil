@@ -414,16 +414,16 @@ function animarCaminho(sel,pts,x,y,refPx,dur){
 let G=null;
 function criarGrafico(){
   graf.querySelectorAll('svg').forEach(s=>s.remove());
-  const Wg=graf.clientWidth-16, H=Math.max(300,Math.min(440,Wg*.48)), m={t:34,r:20,b:40,l:48};
+  const Wg=graf.clientWidth-16, estreito=Wg<560, H=estreito?Math.max(260,Math.min(340,Wg*.85)):Math.max(300,Math.min(440,Wg*.48)), m=estreito?{t:34,r:10,b:36,l:36}:{t:34,r:20,b:40,l:48};
   const svg=d3.select(graf).insert('svg','#dica').attr('viewBox',`0 0 ${Wg} ${H}`).attr('role','img');
   const x=d3.scaleLinear().domain([-24,48]).range([m.l,Wg-m.r]);
-  G={svg,Wg,H,m,x,y:null};
+  G={svg,Wg,H,m,x,y:null,estreito};
   G.faixa=svg.append('rect').attr('y',m.t).attr('height',H-m.b-m.t).attr('fill','rgba(170,190,220,.07)').attr('x',x(0)).attr('width',2);
   G.grade=svg.append('g').attr('class','eixo');
   G.ref=svg.append('line').attr('x1',m.l).attr('x2',Wg-m.r).attr('stroke','#3A4E70');
   G.refTxt=svg.append('text').attr('x',Wg-m.r).attr('text-anchor','end').attr('fill','#8796AD').attr('paint-order','stroke').attr('stroke','#0E1828').attr('stroke-width',5).attr('font-size',12);
   const gx=svg.append('g').attr('class','eixo');
-  for(let t=-24;t<=48;t+=12)gx.append('text').attr('x',x(t)).attr('y',H-14).attr('text-anchor','middle').text(t===0?'pico':(t>0?'+':'−')+Math.abs(t)+' meses');
+  for(let t=-24;t<=48;t+=estreito?24:12){const fim=estreito&&t===48;gx.append('text').attr('x',fim?Wg-m.r:x(t)).attr('y',H-14).attr('text-anchor',fim?'end':'middle').text(t===0?'pico':(t>0?'+':'−')+Math.abs(t)+(estreito&&!fim?'':' meses'));}
   svg.append('line').attr('x1',x(0)).attr('x2',x(0)).attr('y1',m.t-26).attr('y2',H-m.b).attr('stroke','#8796AD').attr('stroke-dasharray','3 4');
   G.faixaTxt=svg.append('text').attr('x',x(0)+8).attr('y',m.t-14).attr('fill','#8796AD').attr('font-size',12);
   G.linhas={eua:svg.append('path').attr('fill','none').attr('stroke',COR.eua).attr('stroke-width',2).attr('stroke-linejoin','round').attr('opacity',.9),
@@ -492,7 +492,7 @@ function desenharPrincipal(animar=true){
     gd.append('path').attr('d',`M${a} ${yy-6}V${yy+6}`);
     gd.append('path').attr('d',`M${a} ${yy}H${a}`).transition().delay(dur*.9).duration(dur?450:0).attr('d',`M${a} ${yy}H${b}`);
     gd.append('path').attr('d',`M${b} ${yy-6}V${yy+6}`).attr('opacity',0).transition().delay(dur*.9+(dur?400:0)).duration(dur?150:0).attr('opacity',1);
-    n.append('text').attr('x',Math.max(a,b)+8).attr('y',yy+4).attr('fill','#E7C27D').attr('font-size',12.5).attr('font-weight',500)
+    const est=G.estreito;n.append('text').attr('x',est?Math.max(m.l+78,Math.min(Wg-m.r-78,(a+b)/2)):Math.max(a,b)+8).attr('text-anchor',est?'middle':'start').attr('y',est?yy+22:yy+4).attr('paint-order','stroke').attr('stroke',est?'#0E1828':'none').attr('stroke-width',5).attr('fill','#E7C27D').attr('font-size',12.5).attr('font-weight',500)
       .text(d.defasagem===0?'reagiram juntos':`defasagem: ${d.defasagem>0?'+':'−'}${tempo(Math.abs(d.defasagem),p)}`);
   }
   const rb=d.res_br, ab=d.pts_br;

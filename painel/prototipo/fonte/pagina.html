@@ -17,7 +17,7 @@
   --serif:'Fraunces',Georgia,serif; --sans:'Plex',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{margin:0;background:var(--fundo);color:var(--texto);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:clip}
 button{font:inherit;color:inherit}
@@ -180,6 +180,7 @@ body.com-gaveta #capa .texto{opacity:.15}
 .mini svg{display:block;width:100%}
 .bloco-mapa{margin-top:clamp(56px,7vw,96px)}
 table.mapa{width:100%;border-collapse:collapse;font-size:15px}
+.mapa-rolagem{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .mapa th{font-weight:500;color:var(--texto3);font-size:13px;text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha2)}
 .mapa td{padding:12px;border-bottom:1px solid var(--linha);vertical-align:middle}
 .mapa td:first-child{color:var(--texto);white-space:nowrap}
@@ -222,6 +223,19 @@ footer b{color:var(--texto2);font-weight:500}
   .medida+.medida{padding-left:0;border-left:0;border-top:1px solid var(--linha)}
   .tres{grid-template-columns:1fr}
   footer{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .grafico{padding:14px 4px 4px}
+  .esquema text{font-size:16px}
+  .medida .valor{font-size:34px}
+  table.mapa{font-size:13px}
+  .mapa th{padding:8px 6px;font-size:12px}
+  .mapa td{padding:10px 6px}
+  .mapa td:first-child{white-space:normal;min-width:92px}
+  .cel{gap:0}
+  .cel svg{display:none}
+  .cel .v{min-width:0}
+  .cel .vazio{font-size:12px;line-height:1.35}
 }
 </style>
 </head>
@@ -382,7 +396,7 @@ footer b{color:var(--texto2);font-weight:500}
       <div class="bloco-mapa">
         <h3>Quem reagiu primeiro</h3>
         <p>Defasagem em todos os indicadores. Valores positivos indicam que o Brasil reagiu depois dos Estados Unidos. A ordem no tempo, sozinha, não prova que uma crise causou a outra.</p>
-        <table class="mapa" id="mapa"></table>
+        <div class="mapa-rolagem"><table class="mapa" id="mapa"></table></div>
       </div>
     </div>
   </div>

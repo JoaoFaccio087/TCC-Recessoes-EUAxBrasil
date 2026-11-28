@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,/*FAVICON*/">
 <title>Recessões EUA × Brasil</title>
+<script>try{if(localStorage.getItem('tcc-tema')==='claro')document.documentElement.dataset.tema='claro'}catch(e){}</script>
 <style>
 @font-face{font-family:'Fraunces';font-style:normal;font-weight:300 700;font-display:swap;src:url(data:font/woff2;base64,/*F_FRAUNCES*/) format('woff2')}
 @font-face{font-family:'Plex';font-weight:400;font-display:swap;src:url(data:font/woff2;base64,/*F_PLEX400*/) format('woff2')}
@@ -56,9 +57,9 @@ body.com-gaveta #capa .texto{opacity:.15}
 #capa.arrastando-obj,#capa.arrastando-obj *{cursor:grabbing!important;user-select:none}
 #esp-rotulo{position:absolute;left:0;top:0;z-index:4;pointer-events:none;font-size:13px;font-weight:500;color:var(--texto);background:rgba(7,13,24,.82);border:1px solid var(--linha2);border-radius:6px;padding:3px 9px;white-space:nowrap}
 .descer,.dica{z-index:3}
-.esp-menu{position:absolute;top:clamp(16px,3svh,28px);right:clamp(16px,3vw,40px);z-index:5}
-#esp-botao{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(14,24,40,.55);border:1px solid var(--linha2);color:var(--texto2);cursor:pointer;opacity:.6;transition:opacity .2s,background .2s,color .2s;backdrop-filter:blur(6px)}
-#esp-botao:hover,#esp-botao[aria-expanded="true"]{opacity:1;color:var(--texto);background:rgba(18,32,54,.85)}
+.esp-menu{position:absolute;top:clamp(16px,3svh,28px);right:clamp(16px,3vw,40px);z-index:5;display:flex;gap:10px}
+#esp-botao,#tema-botao{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(14,24,40,.55);border:1px solid var(--linha2);color:var(--texto2);cursor:pointer;opacity:.6;transition:opacity .2s,background .2s,color .2s;backdrop-filter:blur(6px)}
+#esp-botao:hover,#esp-botao[aria-expanded="true"],#tema-botao:hover{opacity:1;color:var(--texto);background:rgba(18,32,54,.85)}
 #esp-painel{position:absolute;top:52px;right:0;width:260px;background:rgba(14,24,40,.94);border:1px solid var(--linha2);border-radius:14px;padding:16px 16px 14px;box-shadow:0 20px 60px rgba(0,0,0,.45);backdrop-filter:blur(10px)}
 #esp-painel h2{font-size:15px;font-weight:600;margin:0 0 10px}
 .chave{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;font-size:14px;color:var(--texto2);cursor:pointer}
@@ -70,7 +71,10 @@ body.com-gaveta #capa .texto{opacity:.15}
 #esp-todos{margin-top:10px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--linha2);background:transparent;font-size:13px;cursor:pointer}
 #esp-todos:hover{background:rgba(255,255,255,.04)}
 #esp-painel small{display:block;margin-top:10px;font-size:12px;color:var(--texto3);line-height:1.4}
-@media (prefers-reduced-motion:reduce){#esp-botao,.chave input,.chave input::after{transition:none}}
+@media (prefers-reduced-motion:reduce){#esp-botao,#tema-botao,.chave input,.chave input::after{transition:none}}
+.ic-lua{display:none}
+html[data-tema="claro"] .ic-sol{display:none}
+html[data-tema="claro"] .ic-lua{display:block}
 .descer svg{transition:transform .2s}.descer:hover svg{transform:translateY(3px)}
 
 /* ---------- gaveta ---------- */
@@ -206,6 +210,31 @@ footer b{color:var(--texto2);font-weight:500}
 .mapa tbody td.ativo{background:rgba(47,160,110,.10)!important}
 .medida .valor{min-height:42px}
 @media (prefers-reduced-motion:reduce){.segmento .pilula,#manchete{transition:none}}
+
+/* ---------- modo claro ---------- */
+html[data-tema="claro"]{
+  --noite:#EEF2F7; --fundo:#F6F8FB; --painel:#FFFFFF; --painel2:#E8EEF6; --linha:#D9E0EA; --linha2:#C3CDDB;
+  --texto:#0F1B2D; --texto2:#3A4A60; --texto3:#56657A;
+  --eua:#2A62B8; --br:#157A4C; --faixa:rgba(40,70,120,.06); --destaque:#8A5F10;
+  color-scheme:light;
+}
+html[data-tema="claro"] #capa{background:radial-gradient(90% 80% at 72% 50%,#C9D6E9 0%,var(--noite) 70%)}
+html[data-tema="claro"] .escolha button:hover{background:rgba(15,27,45,.04);border-color:var(--texto3)}
+html[data-tema="claro"] #esp-rotulo{background:rgba(255,255,255,.92)}
+html[data-tema="claro"] #esp-botao,html[data-tema="claro"] #tema-botao{background:rgba(255,255,255,.6);opacity:.85}
+html[data-tema="claro"] #esp-botao:hover,html[data-tema="claro"] #esp-botao[aria-expanded="true"],html[data-tema="claro"] #tema-botao:hover{background:rgba(255,255,255,.95);opacity:1}
+html[data-tema="claro"] #esp-painel{background:rgba(255,255,255,.97);box-shadow:0 20px 60px rgba(15,27,45,.16)}
+html[data-tema="claro"] #esp-todos:hover,html[data-tema="claro"] .botao:hover,html[data-tema="claro"] .fechar:hover,html[data-tema="claro"] .trilho button:hover{background:rgba(15,27,45,.05)}
+html[data-tema="claro"] #gaveta{box-shadow:-30px 0 80px rgba(15,27,45,.18)}
+html[data-tema="claro"] #gaveta:not(.on){box-shadow:none}
+html[data-tema="claro"] .g-parte p{color:var(--texto2)}
+html[data-tema="claro"] .botao.cheio:hover{background:#24344D;border-color:#24344D}
+html[data-tema="claro"] .legenda .faixa{background:rgba(40,70,120,.12)}
+html[data-tema="claro"] .dica-graf{background:var(--painel);box-shadow:0 10px 30px rgba(15,27,45,.15)}
+html[data-tema="claro"] .mini[aria-pressed=true]{border-color:var(--texto3)}
+html[data-tema="claro"] .mapa tbody tr:hover td{background:rgba(15,27,45,.03)}
+html[data-tema="claro"] .mapa tbody tr.ativo td{background:rgba(15,27,45,.035)}
+html[data-tema="claro"] .mapa tbody td.ativo{background:rgba(21,122,76,.10)!important}
 @media (max-width:960px){
   #capa{grid-template-columns:1fr;align-content:start}
   #capa .texto{padding:76px 20px 0}
@@ -246,6 +275,10 @@ footer b{color:var(--texto2);font-weight:500}
   <canvas id="frente" aria-hidden="true"></canvas>
   <div id="esp-rotulo" hidden></div>
   <div class="esp-menu">
+    <button type="button" id="tema-botao" aria-pressed="false" aria-label="Mudar para o modo claro" title="Mudar para o modo claro">
+      <svg class="ic-sol" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      <svg class="ic-lua" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+    </button>
     <button type="button" id="esp-botao" aria-expanded="false" aria-controls="esp-painel" aria-label="Detalhes do espaço" title="Detalhes do espaço">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10.5" ry="3.6" transform="rotate(-24 12 12)"/></svg>
     </button>

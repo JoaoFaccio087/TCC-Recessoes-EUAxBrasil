@@ -1,6 +1,12 @@
 (function(){
 'use strict';
 const COR={eua:'#5B8FD9',br:'#2FA06E'};
+/* paletas dos gráficos: escuro (padrão) e claro */
+const PALETA={
+ escuro:{eua:'#5B8FD9',br:'#2FA06E',fundo:'#0E1828',texto:'#EAF0F7',t2:'#A9B6C8',t3:'#728199',rot:'#8796AD',ref:'#3A4E70',grade:'#16233A',faixa:'rgba(170,190,220,.07)',miniFaixa:'rgba(170,190,220,.08)',miniRef:'#2A3C5C',miniPico:'#5A6B86',dest:'#E7C27D',bEixo:'#1C2B42',bMeio:'#4A5F84',bBarra:'#C9D3E0'},
+ claro:{eua:'#2A62B8',br:'#157A4C',fundo:'#FFFFFF',texto:'#0F1B2D',t2:'#3A4A60',t3:'#56657A',rot:'#56657A',ref:'#8C9AAE',grade:'#E6EBF2',faixa:'rgba(40,70,120,.06)',miniFaixa:'rgba(40,70,120,.07)',miniRef:'#C3CDDB',miniPico:'#8C9AAE',dest:'#8A5F10',bEixo:'#D9E0EA',bMeio:'#9AA8BC',bBarra:'#3A4A60'}};
+let P=PALETA[document.documentElement.dataset.tema==='claro'?'claro':'escuro'];
+COR.eua=P.eua;COR.br=P.br;
 const MOV=!matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fmt=(v,c=1)=>v==null?'—':v.toLocaleString('pt-BR',{minimumFractionDigits:c,maximumFractionDigits:c});
 const sinal=(v,c=1)=>v==null?'—':(v>0?'+':v<0?'−':'')+fmt(Math.abs(v),c);
@@ -418,28 +424,28 @@ function criarGrafico(){
   const svg=d3.select(graf).insert('svg','#dica').attr('viewBox',`0 0 ${Wg} ${H}`).attr('role','img');
   const x=d3.scaleLinear().domain([-24,48]).range([m.l,Wg-m.r]);
   G={svg,Wg,H,m,x,y:null,estreito};
-  G.faixa=svg.append('rect').attr('y',m.t).attr('height',H-m.b-m.t).attr('fill','rgba(170,190,220,.07)').attr('x',x(0)).attr('width',2);
+  G.faixa=svg.append('rect').attr('y',m.t).attr('height',H-m.b-m.t).attr('fill',P.faixa).attr('x',x(0)).attr('width',2);
   G.grade=svg.append('g').attr('class','eixo');
-  G.ref=svg.append('line').attr('x1',m.l).attr('x2',Wg-m.r).attr('stroke','#3A4E70');
-  G.refTxt=svg.append('text').attr('x',Wg-m.r).attr('text-anchor','end').attr('fill','#8796AD').attr('paint-order','stroke').attr('stroke','#0E1828').attr('stroke-width',5).attr('font-size',12);
+  G.ref=svg.append('line').attr('x1',m.l).attr('x2',Wg-m.r).attr('stroke',P.ref);
+  G.refTxt=svg.append('text').attr('x',Wg-m.r).attr('text-anchor','end').attr('fill',P.rot).attr('paint-order','stroke').attr('stroke',P.fundo).attr('stroke-width',5).attr('font-size',12);
   const gx=svg.append('g').attr('class','eixo');
   for(let t=-24;t<=48;t+=estreito?24:12){const fim=estreito&&t===48;gx.append('text').attr('x',fim?Wg-m.r:x(t)).attr('y',H-14).attr('text-anchor',fim?'end':'middle').text(t===0?'pico':(t>0?'+':'−')+Math.abs(t)+(estreito&&!fim?'':' meses'));}
-  svg.append('line').attr('x1',x(0)).attr('x2',x(0)).attr('y1',m.t-26).attr('y2',H-m.b).attr('stroke','#8796AD').attr('stroke-dasharray','3 4');
-  G.faixaTxt=svg.append('text').attr('x',x(0)+8).attr('y',m.t-14).attr('fill','#8796AD').attr('font-size',12);
+  svg.append('line').attr('x1',x(0)).attr('x2',x(0)).attr('y1',m.t-26).attr('y2',H-m.b).attr('stroke',P.rot).attr('stroke-dasharray','3 4');
+  G.faixaTxt=svg.append('text').attr('x',x(0)+8).attr('y',m.t-14).attr('fill',P.rot).attr('font-size',12);
   G.linhas={eua:svg.append('path').attr('fill','none').attr('stroke',COR.eua).attr('stroke-width',2).attr('stroke-linejoin','round').attr('opacity',.9),
             br:svg.append('path').attr('fill','none').attr('stroke',COR.br).attr('stroke-width',2.5).attr('stroke-linejoin','round')};
   G.pontos=svg.append('g');
   G.notas=svg.append('g');
-  G.cross=svg.append('line').attr('y1',m.t).attr('y2',H-m.b).attr('stroke','#A9B6C8').attr('opacity',0);
-  G.dots={eua:svg.append('circle').attr('r',4.5).attr('fill',COR.eua).attr('stroke','#0E1828').attr('stroke-width',2).attr('opacity',0),
-          br:svg.append('circle').attr('r',4.5).attr('fill',COR.br).attr('stroke','#0E1828').attr('stroke-width',2).attr('opacity',0)};
+  G.cross=svg.append('line').attr('y1',m.t).attr('y2',H-m.b).attr('stroke',P.t2).attr('opacity',0);
+  G.dots={eua:svg.append('circle').attr('r',4.5).attr('fill',COR.eua).attr('stroke',P.fundo).attr('stroke-width',2).attr('opacity',0),
+          br:svg.append('circle').attr('r',4.5).attr('fill',COR.br).attr('stroke',P.fundo).attr('stroke-width',2).attr('opacity',0)};
   svg.append('rect').attr('x',m.l).attr('y',m.t).attr('width',Wg-m.l-m.r).attr('height',H-m.t-m.b).attr('fill','transparent')
    .on('pointermove',ev=>{if(!G.atual)return;const {p,series}=G.atual, y=G.y;const [mx]=d3.pointer(ev);let t=Math.round(x.invert(mx));if(p.tri)t=Math.round(t/3)*3;t=Math.max(-24,Math.min(48,t));
      G.cross.attr('x1',x(t)).attr('x2',x(t)).attr('opacity',.5);
      let html=`<b>${t===0?'Mês do pico':(t>0?'+':'−')+Math.abs(t)+' meses'}</b>`;
      ['eua','br'].forEach(k=>{const a=series[k];const q=a&&a.find(q=>q[0]===t);
        if(q&&q[1]!=null){G.dots[k].attr('cx',x(t)).attr('cy',y(q[1])).attr('opacity',1);
-         html+=`<div class="l"><span><i style="background:${COR[k]}"></i>${k==='eua'?'EUA':'Brasil'} <span style="color:#728199">${mesTxt(q[2])}</span></span><b class="num">${p.tipo==='nivel'?fmt(q[1]):sinal(q[1],2)}</b></div>`;}
+         html+=`<div class="l"><span><i style="background:${COR[k]}"></i>${k==='eua'?'EUA':'Brasil'} <span style="color:${P.t3}">${mesTxt(q[2])}</span></span><b class="num">${p.tipo==='nivel'?fmt(q[1]):sinal(q[1],2)}</b></div>`;}
        else G.dots[k].attr('opacity',0);});
      dica.innerHTML=html;dica.style.opacity=1;const bw=graf.clientWidth;const px=x(t)/G.Wg*bw;
      dica.style.left=Math.min(bw-190,Math.max(8,px+14))+'px';dica.style.top='20px';})
@@ -464,7 +470,7 @@ function desenharPrincipal(animar=true){
   const ticks=y.ticks(6), rot=v=>p.tipo==='nivel'?fmt(v,0):sinal(v,0);
   G.grade.selectAll('g.tk').data(ticks,v=>p.tipo+v).join(
     en=>{const g=en.append('g').attr('class','tk').attr('opacity',0).attr('transform',v=>`translate(0,${yAntes(v)})`);
-      g.append('line').attr('x1',m.l).attr('x2',Wg-m.r).attr('stroke','#16233A');
+      g.append('line').attr('x1',m.l).attr('x2',Wg-m.r).attr('stroke',P.grade);
       g.append('text').attr('x',m.l-10).attr('y',4).attr('text-anchor','end');return g;},
     up=>up,
     ex=>ex.transition(tr()).attr('opacity',0).attr('transform',v=>`translate(0,${y(v)})`).remove())
@@ -485,23 +491,23 @@ function desenharPrincipal(animar=true){
   G.notas.selectAll('g.n').transition().duration(dur?180:0).attr('opacity',0).remove();
   const n=G.notas.append('g').attr('class','n').attr('opacity',0);
   [['eua',d.res_eua,d.pts_eua],['br',d.res_br,d.pts_br]].forEach(([k,r,a])=>{if(!r||r.reacao==null)return;const t=xT(r.reacao,p),v=val(a,t);if(v==null)return;
-    n.append('circle').attr('cx',x(t)).attr('cy',y(v)).attr('r',6.5).attr('fill','#0E1828').attr('stroke',COR[k]).attr('stroke-width',2.5);});
+    n.append('circle').attr('cx',x(t)).attr('cy',y(v)).attr('r',6.5).attr('fill',P.fundo).attr('stroke',COR[k]).attr('stroke-width',2.5);});
   if(d.defasagem!=null&&d.res_eua&&d.res_br&&d.res_eua.reacao!=null&&d.res_br.reacao!=null){
     const a=x(xT(d.res_eua.reacao,p)), b=x(xT(d.res_br.reacao,p)), yy=m.t+16;
-    const gd=n.append('g').attr('stroke','#E7C27D').attr('fill','none').attr('stroke-width',1.6);
+    const gd=n.append('g').attr('stroke',P.dest).attr('fill','none').attr('stroke-width',1.6);
     gd.append('path').attr('d',`M${a} ${yy-6}V${yy+6}`);
     gd.append('path').attr('d',`M${a} ${yy}H${a}`).transition().delay(dur*.9).duration(dur?450:0).attr('d',`M${a} ${yy}H${b}`);
     gd.append('path').attr('d',`M${b} ${yy-6}V${yy+6}`).attr('opacity',0).transition().delay(dur*.9+(dur?400:0)).duration(dur?150:0).attr('opacity',1);
-    const est=G.estreito;n.append('text').attr('x',est?Math.max(m.l+78,Math.min(Wg-m.r-78,(a+b)/2)):Math.max(a,b)+8).attr('text-anchor',est?'middle':'start').attr('y',est?yy+22:yy+4).attr('paint-order','stroke').attr('stroke',est?'#0E1828':'none').attr('stroke-width',5).attr('fill','#E7C27D').attr('font-size',12.5).attr('font-weight',500)
+    const est=G.estreito;n.append('text').attr('x',est?Math.max(m.l+78,Math.min(Wg-m.r-78,(a+b)/2)):Math.max(a,b)+8).attr('text-anchor',est?'middle':'start').attr('y',est?yy+22:yy+4).attr('paint-order','stroke').attr('stroke',est?P.fundo:'none').attr('stroke-width',5).attr('fill',P.dest).attr('font-size',12.5).attr('font-weight',500)
       .text(d.defasagem===0?'reagiram juntos':`defasagem: ${d.defasagem>0?'+':'−'}${tempo(Math.abs(d.defasagem),p)}`);
   }
   const rb=d.res_br, ab=d.pts_br;
   if(rb&&rb.extremo!=null&&rb.amplitude!=null){const t=xT(rb.extremo,p),v=val(ab,t);if(v!=null){
-    n.append('circle').attr('cx',x(t)).attr('cy',y(v)).attr('r',6).attr('fill',COR.br).attr('stroke','#0E1828').attr('stroke-width',2);
-    const cabe=y(v)+26<H-m.b-18;n.append('text').attr('x',x(t)).attr('y',cabe?y(v)+24:y(v)-14).attr('text-anchor','middle').attr('paint-order','stroke').attr('stroke','#0E1828').attr('stroke-width',5).attr('fill','#EAF0F7').attr('font-size',12.5).text(`pior valor: ${sinal(rb.amplitude)}${unid(p)}`);}}
+    n.append('circle').attr('cx',x(t)).attr('cy',y(v)).attr('r',6).attr('fill',COR.br).attr('stroke',P.fundo).attr('stroke-width',2);
+    const cabe=y(v)+26<H-m.b-18;n.append('text').attr('x',x(t)).attr('y',cabe?y(v)+24:y(v)-14).attr('text-anchor','middle').attr('paint-order','stroke').attr('stroke',P.fundo).attr('stroke-width',5).attr('fill',P.texto).attr('font-size',12.5).text(`pior valor: ${sinal(rb.amplitude)}${unid(p)}`);}}
   if(rb&&rb.recup!=null){const t=xT(rb.recup,p);if(t<=48){const v=val(ab,t);if(v!=null)
-    n.append('rect').attr('x',x(t)-5).attr('y',y(v)-5).attr('width',10).attr('height',10).attr('transform',`rotate(45 ${x(t)} ${y(v)})`).attr('fill',COR.br).attr('stroke','#0E1828').attr('stroke-width',2);}}
-  if(!series.br&&!p.sem_par)n.append('text').attr('x',(m.l+Wg-m.r)/2+60).attr('y',y(ref)+40).attr('text-anchor','middle').attr('fill','#A9B6C8').attr('font-size',14).text('Brasil: sem série para este período');
+    n.append('rect').attr('x',x(t)-5).attr('y',y(v)-5).attr('width',10).attr('height',10).attr('transform',`rotate(45 ${x(t)} ${y(v)})`).attr('fill',COR.br).attr('stroke',P.fundo).attr('stroke-width',2);}}
+  if(!series.br&&!p.sem_par)n.append('text').attr('x',(m.l+Wg-m.r)/2+60).attr('y',y(ref)+40).attr('text-anchor','middle').attr('fill',P.t2).attr('font-size',14).text('Brasil: sem série para este período');
   n.transition().delay(dur*.75).duration(dur?350:0).attr('opacity',1);
 }
 
@@ -566,12 +572,12 @@ function desenharTres(){
     EPS.forEach(epi=>{const b=document.createElement('button');b.type='button';b.className='mini';
       b.innerHTML=`<h5>${ROT[epi.id]}</h5><p></p>`;
       const s=d3.select(b).append('svg').attr('viewBox',`0 0 ${Wm} ${Hm}`).attr('aria-hidden','true');
-      s.append('rect').attr('x',x(0)).attr('y',m.t).attr('width',Math.max(1.5,x(epi.meses)-x(0))).attr('height',Hm-m.b-m.t).attr('fill','rgba(170,190,220,.08)');
-      const rl=s.append('line').attr('x1',m.l).attr('x2',Wm-m.r).attr('stroke','#2A3C5C');
-      s.append('line').attr('x1',x(0)).attr('x2',x(0)).attr('y1',m.t).attr('y2',Hm-m.b).attr('stroke','#5A6B86').attr('stroke-dasharray','2 3');
+      s.append('rect').attr('x',x(0)).attr('y',m.t).attr('width',Math.max(1.5,x(epi.meses)-x(0))).attr('height',Hm-m.b-m.t).attr('fill',P.miniFaixa);
+      const rl=s.append('line').attr('x1',m.l).attr('x2',Wm-m.r).attr('stroke',P.miniRef);
+      s.append('line').attr('x1',x(0)).attr('x2',x(0)).attr('y1',m.t).attr('y2',Hm-m.b).attr('stroke',P.miniPico).attr('stroke-dasharray','2 3');
       const li={eua:s.append('path').attr('fill','none').attr('stroke',COR.eua).attr('stroke-width',1.6),br:s.append('path').attr('fill','none').attr('stroke',COR.br).attr('stroke-width',2)};
-      s.append('text').attr('x',x(0)).attr('y',Hm-4).attr('text-anchor','middle').attr('fill','#728199').attr('font-size',11).text('pico');
-      const sd=s.append('text').attr('x',Wm/2+40).attr('y',Hm/2+30).attr('text-anchor','middle').attr('fill','#A9B6C8').attr('font-size',12).attr('opacity',0).text('Brasil: sem dados');
+      s.append('text').attr('x',x(0)).attr('y',Hm-4).attr('text-anchor','middle').attr('fill',P.t3).attr('font-size',11).text('pico');
+      const sd=s.append('text').attr('x',Wm/2+40).attr('y',Hm/2+30).attr('text-anchor','middle').attr('fill',P.t2).attr('font-size',12).attr('opacity',0).text('Brasil: sem dados');
       b.onclick=()=>{estado.ep=epi.id;atualizar();};
       el.appendChild(b);T.cards[epi.id]={b,rl,li,sd};});}
   T.par=p.id;
@@ -595,7 +601,7 @@ function desenharMapa(){
     EPS.forEach(e=>{const d=p.eps[e.id];
       if(d.defasagem==null){const motivo=d.status==='SEM_DADOS'?'sem série brasileira':(d.res_br&&d.res_br.st_reacao!=='OK'?'Brasil não reagiu':'EUA não reagiram');h+=`<td data-ep="${e.id}"><div class="cel"><span class="vazio">${motivo}</span></div></td>`;return;}
       const v=d.defasagem, w=96, c=w/2, px=Math.max(-1,Math.min(1,v/max))*c;
-      const svg=`<svg width="${w}" height="14" aria-hidden="true"><line x1="0" x2="${w}" y1="7" y2="7" stroke="#1C2B42"/><line x1="${c}" x2="${c}" y1="0" y2="14" stroke="#4A5F84"/><rect x="${Math.min(c,c+px)}" y="3" width="${Math.max(3,Math.abs(px))}" height="8" rx="2" fill="#C9D3E0"/></svg>`;
+      const svg=`<svg width="${w}" height="14" aria-hidden="true"><line x1="0" x2="${w}" y1="7" y2="7" stroke="${P.bEixo}"/><line x1="${c}" x2="${c}" y1="0" y2="14" stroke="${P.bMeio}"/><rect x="${Math.min(c,c+px)}" y="3" width="${Math.max(3,Math.abs(px))}" height="8" rx="2" fill="${P.bBarra}"/></svg>`;
       h+=`<td data-ep="${e.id}"><div class="cel">${svg}<span class="v">${v===0?'mesmo '+(p.tri?'trim.':'mês'):(v>0?'+':'−')+Math.abs(v)+(p.tri?' trim.':' m')}</span></div></td>`;});
     h+='</tr>';});
   t.innerHTML=h+'</tbody>';
@@ -625,6 +631,17 @@ function atualizar(animar=true){
   document.querySelectorAll('#mapa tbody td[data-ep]').forEach(td=>td.classList.toggle('ativo',td.parentElement.dataset.par===estado.par&&td.dataset.ep===estado.ep));
   desenharPrincipal(animar);desenharMedidas();desenharTres();
 }
+/* ---------- tema claro/escuro ---------- */
+const btTema=document.getElementById('tema-botao');
+function marcarTema(){const claro=P===PALETA.claro;btTema.setAttribute('aria-pressed',claro);const r=claro?'Mudar para o modo escuro':'Mudar para o modo claro';btTema.setAttribute('aria-label',r);btTema.title=r;}
+function aplicarTema(t){
+  if(t==='claro')document.documentElement.dataset.tema='claro';else delete document.documentElement.dataset.tema;
+  P=PALETA[t];COR.eua=P.eua;COR.br=P.br;
+  try{localStorage.setItem('tcc-tema',t)}catch(e){}
+  marcarTema();G=null;T=null;desenharMapa();atualizar(false);
+}
+btTema.onclick=()=>aplicarTema(P===PALETA.claro?'escuro':'claro');
+marcarTema();
 desenharMapa();atualizar(false);
 let rz,larg=graf.clientWidth;new ResizeObserver(()=>{if(graf.clientWidth===larg)return;larg=graf.clientWidth;clearTimeout(rz);rz=setTimeout(()=>{G=null;desenharPrincipal(false);moverPilula()},80)}).observe(graf);
 })();
